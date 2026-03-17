@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Click Training</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand__eyebrow" id="brand-eyebrow">Reaction Warmup</span>
+        <h1 id="brand-title">Click Training</h1>
+      </div>
+
+      <div class="lang-switch" role="group" aria-label="Language switcher">
+        <button id="lang-en" class="lang-switch__btn is-active" type="button">EN</button>
+        <button id="lang-ru" class="lang-switch__btn" type="button">RU</button>
+      </div>
+
+      <div class="hud" aria-live="polite">
+        <div class="hud__item hud__item--score">
+          <span class="hud__label" id="hud-score-label">Score</span>
+          <span class="hud__value hud__value--accent hud__value--score" id="score-display">0</span>
+        </div>
+        <div class="hud__item">
+          <span class="hud__label" id="hud-time-label">Time</span>
+          <span class="hud__value" id="time-display">00:00</span>
+        </div>
+        <div class="hud__item">
+          <span class="hud__label" id="hud-hits-label">Accurate Clicks</span>
+          <span class="hud__value" id="hits-display">0</span>
+        </div>
+        <div class="hud__item">
+          <span class="hud__label" id="hud-clicks-label">Free Clicks</span>
+          <span class="hud__value" id="clicks-display">0</span>
+        </div>
+        <div class="hud__item">
+          <span class="hud__label" id="hud-speed-label">Speed</span>
+          <span class="hud__value" id="speed-display">0.00 t/s</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="trainer-layout">
+      <aside class="control-panel" aria-labelledby="settings-title">
+        <div class="panel-card">
+          <p class="panel-card__eyebrow" id="settings-eyebrow">Session Setup</p>
+          <h2 id="settings-title">Training Settings</h2>
+
+          <form id="settings-form" class="settings-form">
+            <label class="field">
+              <span id="duration-label">Duration</span>
+              <div class="field__inline">
+                <input id="duration-input" name="duration" type="number" min="10" max="1800" step="10" value="30">
+                <span class="field__suffix" id="duration-suffix">sec</span>
+              </div>
+            </label>
+
+            <div class="preset-row" id="duration-presets" role="group" aria-label="Quick time presets">
+              <button class="preset-btn is-active" type="button" data-duration="60" id="preset-60">1 min</button>
+              <button class="preset-btn" type="button" data-duration="120" id="preset-120">2 min</button>
+              <button class="preset-btn" type="button" data-duration="300" id="preset-300">5 min</button>
+            </div>
+
+            <label class="field">
+              <span id="spawn-label">Spawn Interval</span>
+              <div class="field__inline">
+                <input id="spawn-input" name="spawn" type="number" min="120" max="2500" step="10" value="500">
+                <span class="field__suffix" id="spawn-suffix">ms</span>
+              </div>
+            </label>
+
+            <label class="field">
+              <span id="lifetime-label">Hold at Full Size</span>
+              <div class="field__inline">
+                <input id="lifetime-input" name="lifetime" type="number" min="100" max="5000" step="10" value="500">
+                <span class="field__suffix" id="lifetime-suffix">ms</span>
+              </div>
+            </label>
+
+            <label class="field">
+              <span id="concurrent-label">Targets at Once</span>
+              <div class="field__inline">
+                <input id="concurrent-input" name="concurrent" type="number" min="1" max="12" step="1" value="5">
+                <span class="field__suffix" id="concurrent-suffix">pcs</span>
+              </div>
+            </label>
+
+            <div class="tips">
+              <div>
+                <span class="tips__label" id="tip-label">Tip</span>
+                <p id="tip-line-1">For a more aggressive warmup, try this setup:</p>
+                <p id="tip-line-2">— spawn interval: 120 ms</p>
+                <p id="tip-line-3">— hold at full size: 120 ms</p>
+                <p id="tip-line-4">— targets at once: 12</p>
+                <p id="tip-line-5">This mode gives you a faster pace and works well for maximum-aggression warmups.</p>
+              </div>
+            </div>
+          </form>
+        </div>
+      </aside>
+
+      <section class="arena-section">
+        <div class="arena-frame">
+          <div class="arena-grid" aria-hidden="true"></div>
+          <div class="arena" id="arena" tabindex="0" aria-label="Game field"></div>
+          <div class="arena-tools" id="arena-tools" aria-label="Game controls">
+            <button id="fullscreen-button" class="tool-btn" type="button">Fullscreen</button>
+            <button id="stop-button" class="tool-btn tool-btn--danger" type="button" disabled>Stop</button>
+          </div>
+
+          <div class="overlay-card overlay-card--intro" id="intro-overlay">
+            <p class="overlay-card__eyebrow" id="intro-eyebrow">Ready Check</p>
+            <h2 id="intro-title">Click Warmup Before the Match.</h2>
+            <p id="intro-copy">
+              Your score grows from accurate clicks on targets and free clicks between them. This training values both precision and tempo.
+            </p>
+            <p class="overlay-card__note" id="intro-note">Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, and Fortnite.</p>
+            <div class="overlay-actions">
+              <button id="overlay-start-button" class="action-btn" type="button">Start Session</button>
+            </div>
+          </div>
+
+          <div class="countdown-overlay hidden" id="countdown-overlay" aria-live="assertive" aria-atomic="true">
+            <span id="countdown-value">3</span>
+          </div>
+
+          <div class="overlay-card overlay-card--result hidden" id="result-overlay">
+            <p class="overlay-card__eyebrow" id="result-eyebrow">Session Complete</p>
+            <h2 id="result-title">Training Results</h2>
+            <dl class="results-grid">
+              <div class="results-grid__score">
+                <dt id="result-score-label">Score</dt>
+                <dd id="result-score">0</dd>
+              </div>
+              <div>
+                <dt id="result-hits-label">Accurate Clicks</dt>
+                <dd id="result-hits">0</dd>
+              </div>
+              <div>
+                <dt id="result-clicks-label">Free Clicks</dt>
+                <dd id="result-clicks">0</dd>
+              </div>
+              <div>
+                <dt id="result-accuracy-label">Accuracy</dt>
+                <dd id="result-accuracy">0%</dd>
+              </div>
+              <div>
+                <dt id="result-speed-label">Speed</dt>
+                <dd id="result-speed">0.00 t/s</dd>
+              </div>
+              <div>
+                <dt id="result-duration-label">Round</dt>
+                <dd id="result-duration">00:00</dd>
+              </div>
+            </dl>
+            <div class="result-explainer">
+              <p class="result-explainer__title" id="results-info-title">How Score Works</p>
+              <p id="results-info-line-1">Your score is built from two kinds of clicks:</p>
+              <p id="results-info-line-2">— accurate clicks are direct hits on targets</p>
+              <p id="results-info-line-3">— free clicks are extra clicks between targets</p>
+              <p id="results-info-line-4">Both categories add to your total score.</p>
+              <p id="results-info-line-5">The goal is not only accuracy, but also overall click activity, so you can warm up your hand and get up to speed before a game.</p>
+            </div>
+            <button id="restart-button" class="action-btn" type="button">Start Session</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
