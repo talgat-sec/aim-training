@@ -3,80 +3,57 @@ const arena = document.getElementById("arena");
 const arenaTools = document.getElementById("arena-tools");
 const settingsForm = document.getElementById("settings-form");
 const durationInput = document.getElementById("duration-input");
-const spawnInput = document.getElementById("spawn-input");
-const lifetimeInput = document.getElementById("lifetime-input");
-const concurrentInput = document.getElementById("concurrent-input");
 const durationPresets = document.getElementById("duration-presets");
-const scoreDisplay = document.getElementById("score-display");
-const timeDisplay = document.getElementById("time-display");
-const hitsDisplay = document.getElementById("hits-display");
-const clicksDisplay = document.getElementById("clicks-display");
-const speedDisplay = document.getElementById("speed-display");
+const difficultyBtns = document.getElementById("difficulty-btns");
+const difficultyButtons = Array.from(document.querySelectorAll(".difficulty-btn"));
 const introOverlay = document.getElementById("intro-overlay");
 const resultOverlay = document.getElementById("result-overlay");
 const countdownOverlay = document.getElementById("countdown-overlay");
 const countdownValue = document.getElementById("countdown-value");
 const restartButton = document.getElementById("restart-button");
-const fullscreenButton = document.getElementById("fullscreen-button");
 const stopButton = document.getElementById("stop-button");
 const overlayStartButton = document.getElementById("overlay-start-button");
-const overlayFullscreenButton = document.getElementById("overlay-fullscreen-button");
 const langEnButton = document.getElementById("lang-en");
 const langRuButton = document.getElementById("lang-ru");
 const presetButtons = Array.from(document.querySelectorAll(".preset-btn"));
+const muteBtn = document.getElementById("mute-btn");
 
-const resultHits = document.getElementById("result-hits");
-const resultClicks = document.getElementById("result-clicks");
-const resultAccuracy = document.getElementById("result-accuracy");
+const bgMusic = new Audio("assets/audio/battle-theme.mp3");
+bgMusic.loop = true;
+bgMusic.volume = 0.35;
+
 const resultScore = document.getElementById("result-score");
-const resultSpeed = document.getElementById("result-speed");
 const resultDuration = document.getElementById("result-duration");
+const resultDifficulty = document.getElementById("result-difficulty");
 
 const uiText = {
   brandEyebrow: document.getElementById("brand-eyebrow"),
   brandTitle: document.getElementById("brand-title"),
-  hudScoreLabel: document.getElementById("hud-score-label"),
-  hudTimeLabel: document.getElementById("hud-time-label"),
-  hudHitsLabel: document.getElementById("hud-hits-label"),
-  hudClicksLabel: document.getElementById("hud-clicks-label"),
-  hudSpeedLabel: document.getElementById("hud-speed-label"),
   settingsEyebrow: document.getElementById("settings-eyebrow"),
   settingsTitle: document.getElementById("settings-title"),
   durationLabel: document.getElementById("duration-label"),
   durationSuffix: document.getElementById("duration-suffix"),
+  preset30: document.getElementById("preset-30"),
   preset60: document.getElementById("preset-60"),
+  preset90: document.getElementById("preset-90"),
   preset120: document.getElementById("preset-120"),
+  preset150: document.getElementById("preset-150"),
+  preset180: document.getElementById("preset-180"),
+  preset240: document.getElementById("preset-240"),
   preset300: document.getElementById("preset-300"),
-  spawnLabel: document.getElementById("spawn-label"),
-  spawnSuffix: document.getElementById("spawn-suffix"),
-  lifetimeLabel: document.getElementById("lifetime-label"),
-  lifetimeSuffix: document.getElementById("lifetime-suffix"),
-  concurrentLabel: document.getElementById("concurrent-label"),
-  concurrentSuffix: document.getElementById("concurrent-suffix"),
-  tipLabel: document.getElementById("tip-label"),
-  tipLine1: document.getElementById("tip-line-1"),
-  tipLine2: document.getElementById("tip-line-2"),
-  tipLine3: document.getElementById("tip-line-3"),
-  tipLine4: document.getElementById("tip-line-4"),
-  tipLine5: document.getElementById("tip-line-5"),
+  difficultyLabel: document.getElementById("difficulty-label"),
   introEyebrow: document.getElementById("intro-eyebrow"),
   introTitle: document.getElementById("intro-title"),
-  introCopy: document.getElementById("intro-copy"),
   introNote: document.getElementById("intro-note"),
   resultEyebrow: document.getElementById("result-eyebrow"),
   resultTitle: document.getElementById("result-title"),
   resultScoreLabel: document.getElementById("result-score-label"),
-  resultHitsLabel: document.getElementById("result-hits-label"),
-  resultClicksLabel: document.getElementById("result-clicks-label"),
-  resultAccuracyLabel: document.getElementById("result-accuracy-label"),
-  resultSpeedLabel: document.getElementById("result-speed-label"),
   resultDurationLabel: document.getElementById("result-duration-label"),
-  resultsInfoTitle: document.getElementById("results-info-title"),
-  resultsInfoLine1: document.getElementById("results-info-line-1"),
-  resultsInfoLine2: document.getElementById("results-info-line-2"),
-  resultsInfoLine3: document.getElementById("results-info-line-3"),
-  resultsInfoLine4: document.getElementById("results-info-line-4"),
-  resultsInfoLine5: document.getElementById("results-info-line-5"),
+  resultDifficultyLabel: document.getElementById("result-difficulty-label"),
+  scoreLegendTitle: document.getElementById("score-legend-title"),
+  scoreLegendNormal: document.getElementById("score-legend-normal"),
+  scoreLegendArmored: document.getElementById("score-legend-armored"),
+  scoreLegendFlying: document.getElementById("score-legend-flying"),
 };
 
 const translations = {
@@ -84,119 +61,88 @@ const translations = {
     documentTitle: "Click Training",
     brandEyebrow: "Reaction Warmup",
     brandTitle: "Click Training",
-    hudScoreLabel: "Score",
-    hudTimeLabel: "Time",
-    hudHitsLabel: "Accurate Clicks",
-    hudClicksLabel: "Free Clicks",
-    hudSpeedLabel: "Speed",
     settingsEyebrow: "Session Setup",
     settingsTitle: "Training Settings",
     durationLabel: "Duration",
     durationSuffix: "sec",
+    preset30: "30 sec",
     preset60: "1 min",
+    preset90: "1.5 min",
     preset120: "2 min",
+    preset150: "2.5 min",
+    preset180: "3 min",
+    preset240: "4 min",
     preset300: "5 min",
     presetsAriaLabel: "Quick time presets",
-    spawnLabel: "Spawn Interval",
-    spawnSuffix: "ms",
-    lifetimeLabel: "Hold at Full Size",
-    lifetimeSuffix: "ms",
-    concurrentLabel: "Targets at Once",
-    concurrentSuffix: "pcs",
-    tipLabel: "Tip",
-    tipLine1: "For a more aggressive warmup, try this setup:",
-    tipLine2: "— spawn interval: 120 ms",
-    tipLine3: "— hold at full size: 120 ms",
-    tipLine4: "— targets at once: 12",
-    tipLine5: "This mode gives you a faster pace and works well for maximum-aggression warmups.",
+    difficultyLabel: "Difficulty",
+    diffEasy: "Easy",
+    diffMedium: "Medium",
+    diffHard: "Hard",
+    difficultyAriaLabel: "Difficulty",
     arenaLabel: "Game field",
     arenaToolsLabel: "Game controls",
     introEyebrow: "Ready Check",
     introTitle: "Click Warmup Before the Match.",
-    introCopy:
-      "Your score grows from accurate clicks on targets and free clicks between them. This training values both precision and tempo.",
     introNote:
-      "Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, and Fortnite.",
+      "Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2, and League of Legends.",
     startSession: "Start Session",
-    fullscreen: "Fullscreen",
-    fullscreenExit: "Press Esc to Exit",
     stop: "Stop",
     resultEyebrow: "Session Complete",
     resultTitle: "Training Results",
     resultScoreLabel: "Score",
-    resultHitsLabel: "Accurate Clicks",
-    resultClicksLabel: "Free Clicks",
-    resultAccuracyLabel: "Accuracy",
-    resultSpeedLabel: "Speed",
     resultDurationLabel: "Round",
-    resultsInfoTitle: "How Score Works",
-    resultsInfoLine1: "Your score is built from two kinds of clicks:",
-    resultsInfoLine2: "— accurate clicks are direct hits on targets",
-    resultsInfoLine3: "— free clicks are extra clicks between targets",
-    resultsInfoLine4: "Both categories add to your total score.",
-    resultsInfoLine5:
-      "The goal is not only accuracy, but also overall click activity, so you can warm up your hand and get up to speed before a game.",
-    speedUnit: "c/s",
+    resultDifficultyLabel: "Difficulty",
+    scoreLegendTitle: "How Points Work",
+    scoreLegendNormal: "Normal target",
+    scoreLegendArmored: "Armored target",
+    scoreLegendFlying: "Flying target",
+    scoreLegendHit: "on hit",
+    scoreLegendDestroy: "on destroy",
+    scoreLegendMiss: "on miss",
     langSwitcherLabel: "Language switcher",
   },
   ru: {
     documentTitle: "Тренировка клика",
     brandEyebrow: "Разогрев реакции",
     brandTitle: "Тренировка клика",
-    hudScoreLabel: "Счёт",
-    hudTimeLabel: "Время",
-    hudHitsLabel: "Точные клики",
-    hudClicksLabel: "Свободные клики",
-    hudSpeedLabel: "Скорость",
     settingsEyebrow: "Параметры Сессии",
     settingsTitle: "Настройки тренировки",
     durationLabel: "Длительность",
     durationSuffix: "сек",
+    preset30: "30 сек",
     preset60: "1 мин",
+    preset90: "1.5 мин",
     preset120: "2 мин",
+    preset150: "2.5 мин",
+    preset180: "3 мин",
+    preset240: "4 мин",
     preset300: "5 мин",
     presetsAriaLabel: "Быстрые значения времени",
-    spawnLabel: "Интервал появления",
-    spawnSuffix: "мс",
-    lifetimeLabel: "Пауза на полном размере",
-    lifetimeSuffix: "мс",
-    concurrentLabel: "Целей одновременно",
-    concurrentSuffix: "шт",
-    tipLabel: "Подсказка",
-    tipLine1: "Также для более агрессивной разминки попробуйте:",
-    tipLine2: "— интервал появления: 120 мс",
-    tipLine3: "— пауза на полном размере: 120 мс",
-    tipLine4: "— целей одновременно: 12",
-    tipLine5:
-      "Этот режим даёт более высокий темп и подходит для максимальной агрессивной разминки.",
+    difficultyLabel: "Сложность",
+    diffEasy: "Лёгкий",
+    diffMedium: "Средний",
+    diffHard: "Тяжёлый",
+    difficultyAriaLabel: "Сложность",
     arenaLabel: "Игровое поле",
     arenaToolsLabel: "Игровые элементы управления",
     introEyebrow: "Готовность",
     introTitle: "Разминка на клики перед игрой.",
-    introCopy:
-      "Счёт растёт за точные клики по целям и за свободные клики между ними. В этой тренировке важны и точность, и темп.",
     introNote:
-      "Подходит для разминки перед VALORANT, Counter-Strike 2, Apex Legends, Call of Duty и Fortnite.",
+      "Подходит для разминки (раскликаться) перед: VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2 и League of Legends.",
     startSession: "Начать сессию",
-    fullscreen: "Полный экран",
-    fullscreenExit: "Нажмите Esc для выхода",
     stop: "Стоп",
     resultEyebrow: "Сессия завершена",
     resultTitle: "Результат тренировки",
     resultScoreLabel: "Счёт",
-    resultHitsLabel: "Точные клики",
-    resultClicksLabel: "Свободные клики",
-    resultAccuracyLabel: "Точность",
-    resultSpeedLabel: "Скорость",
     resultDurationLabel: "Раунд",
-    resultsInfoTitle: "Как считается счёт",
-    resultsInfoLine1: "Счёт складывается из двух типов кликов:",
-    resultsInfoLine2: "— точные клики — это попадания по целям",
-    resultsInfoLine3: "— свободные клики — это дополнительные клики между целями",
-    resultsInfoLine4: "Обе категории идут в плюс к общему счёту.",
-    resultsInfoLine5:
-      "Смысл тренировки не только в точности, но и в общей активности кликов, чтобы быстрее раскликаться и разогревать руку перед игрой.",
-    speedUnit: "к/с",
+    resultDifficultyLabel: "Сложность",
+    scoreLegendTitle: "Как начисляются очки",
+    scoreLegendNormal: "Обычная цель",
+    scoreLegendArmored: "Бронированная цель",
+    scoreLegendFlying: "Летающая цель",
+    scoreLegendHit: "за попадание",
+    scoreLegendDestroy: "за уничтожение",
+    scoreLegendMiss: "за промах",
     langSwitcherLabel: "Переключение языка",
   },
 };
@@ -207,22 +153,42 @@ const HIT_REACTION_MS = 220;
 const MISS_MARKER_MS = 100;
 const SESSION_COUNTDOWN_STEPS = [3, 2, 1];
 const SESSION_COUNTDOWN_MS = 1000;
+const ARMORED_SPAWN_INTERVAL_MS = 6000;
+const ARMORED_HITS_REQUIRED = 5;
+const ARMORED_HOLD_MS = 4000;
+const FLYING_SPAWN_INTERVAL_MS = 9000;
+const FLYING_SPEED_PX_S = 260;
+const FLYING_SIZE = 66;
+
+const DIFFICULTY_PRESETS = {
+  easy:   { spawn: 900,  hold: 1500, concurrent: 1, flyingLifetime: 4000 },
+  medium: { spawn: 500,  hold: 1000, concurrent: 1, flyingLifetime: 2500 },
+  hard:   { spawn: 300,  hold: 800,  concurrent: 1, flyingLifetime: 1200 },
+};
 
 const state = {
   language: "en",
+  difficulty: "medium",
+  muted: false,
   running: false,
-  totalSeconds: 30,
+  totalSeconds: 120,
   spawnInterval: 500,
-  holdDuration: 500,
-  maxTargets: 5,
+  holdDuration: 1000,
+  maxTargets: 1,
   clicks: 0,
   hits: 0,
-  misses: 0,
+  armoredKills: 0,
+  flyingKills: 0,
+  missedTargets: 0,
+  missedArmored: 0,
+  missedFlying: 0,
   startTime: 0,
-  remainingMs: 30000,
+  remainingMs: 120000,
   elapsedMs: 0,
   countdownTimerId: null,
   spawnTimerId: null,
+  armoredSpawnTimerId: null,
+  flyingSpawnTimerId: null,
   startSequenceTimerIds: [],
   preparing: false,
   activeTargets: new Map(),
@@ -231,6 +197,7 @@ const state = {
   audioMasterGain: null,
   audioCompressor: null,
   noiseBuffer: null,
+  audioKeepAliveId: null,
 };
 
 function clamp(value, min, max) {
@@ -257,21 +224,17 @@ function getTotalClicks() {
   return state.clicks;
 }
 
-function getMissClicks() {
-  return state.clicks;
-}
-
-function getTotalAttempts() {
-  return state.hits + getMissClicks();
-}
-
 function getScore() {
-  return state.hits * 20 + getMissClicks();
+  return (
+    state.hits * 20 +
+    state.armoredKills * 50 +
+    state.flyingKills * 50 -
+    state.missedTargets * 20 -
+    state.missedArmored * 200 -
+    state.missedFlying * 200
+  );
 }
 
-function formatSpeed(speed) {
-  return `${speed.toFixed(2)} ${translations[state.language].speedUnit}`;
-}
 
 function updateLanguageButtons() {
   langEnButton.classList.toggle("is-active", state.language === "en");
@@ -291,6 +254,7 @@ function applyLanguage() {
   });
 
   durationPresets.setAttribute("aria-label", copy.presetsAriaLabel);
+  difficultyBtns.setAttribute("aria-label", copy.difficultyAriaLabel);
   arena.setAttribute("aria-label", copy.arenaLabel);
   arenaTools.setAttribute("aria-label", copy.arenaToolsLabel);
   document.querySelector(".lang-switch")?.setAttribute("aria-label", copy.langSwitcherLabel);
@@ -299,14 +263,18 @@ function applyLanguage() {
   restartButton.textContent = copy.startSession;
   stopButton.textContent = copy.stop;
 
-  updateLanguageButtons();
-  updateFullscreenButtons();
-  updateHud();
+  document.getElementById("diff-easy").textContent = copy.diffEasy;
+  document.getElementById("diff-medium").textContent = copy.diffMedium;
+  document.getElementById("diff-hard").textContent = copy.diffHard;
 
-  if (!state.running) {
-    const speed = state.elapsedMs > 0 ? state.hits / Math.max(1, state.elapsedMs / 1000) : 0;
-    resultSpeed.textContent = formatSpeed(speed);
-  }
+  document.getElementById("score-legend-hit").textContent = copy.scoreLegendHit;
+  document.getElementById("score-legend-hit-flying").textContent = copy.scoreLegendHit;
+  document.getElementById("score-legend-destroy").textContent = copy.scoreLegendDestroy;
+  document.getElementById("score-legend-miss-normal").textContent = copy.scoreLegendMiss;
+  document.getElementById("score-legend-miss-armored").textContent = copy.scoreLegendMiss;
+  document.getElementById("score-legend-miss-flying").textContent = copy.scoreLegendMiss;
+
+  updateLanguageButtons();
 }
 
 function setLanguage(language) {
@@ -324,38 +292,23 @@ function updatePresetButtons(selectedSeconds) {
   });
 }
 
-function updateFullscreenButtons() {
-  const isFullscreen = document.fullscreenElement === arenaSection;
-  const copy = translations[state.language];
-  const label = isFullscreen ? copy.fullscreenExit : copy.fullscreen;
-
-  fullscreenButton.textContent = label;
-  if (overlayFullscreenButton) {
-    overlayFullscreenButton.textContent = label;
-  }
-}
-
 function updateControls() {
   stopButton.disabled = !state.running && !state.preparing;
-  updateFullscreenButtons();
 }
 
-function updateHud() {
-  const elapsedSeconds = getElapsedSeconds();
-  const speed = elapsedSeconds > 0 ? state.hits / elapsedSeconds : 0;
-  const score = getScore();
-  const missClicks = getMissClicks();
-
-  scoreDisplay.textContent = String(score);
-  hitsDisplay.textContent = String(state.hits);
-  clicksDisplay.textContent = String(missClicks);
-  speedDisplay.textContent = formatSpeed(speed);
-}
 
 function clearSpawnLoop() {
   if (state.spawnTimerId !== null) {
     window.clearInterval(state.spawnTimerId);
     state.spawnTimerId = null;
+  }
+  if (state.armoredSpawnTimerId !== null) {
+    window.clearInterval(state.armoredSpawnTimerId);
+    state.armoredSpawnTimerId = null;
+  }
+  if (state.flyingSpawnTimerId !== null) {
+    window.clearInterval(state.flyingSpawnTimerId);
+    state.flyingSpawnTimerId = null;
   }
 }
 
@@ -400,7 +353,7 @@ function getAudioContext() {
     state.audioMasterGain = state.audioContext.createGain();
     state.audioCompressor = state.audioContext.createDynamicsCompressor();
 
-    state.audioMasterGain.gain.value = 2.8;
+    state.audioMasterGain.gain.value = 2.24;
     state.audioCompressor.threshold.value = -24;
     state.audioCompressor.knee.value = 12;
     state.audioCompressor.ratio.value = 14;
@@ -416,6 +369,33 @@ function getAudioContext() {
   }
 
   return state.audioContext;
+}
+
+function playSilent() {
+  const audioContext = getAudioContext();
+  if (!audioContext) return;
+  const silentBuffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+  const source = audioContext.createBufferSource();
+  source.buffer = silentBuffer;
+  source.connect(audioContext.destination);
+  source.start(0);
+}
+
+function prewarmAudio() {
+  playSilent();
+}
+
+function startAudioKeepAlive() {
+  stopAudioKeepAlive();
+  // Every 5 seconds play a silent buffer to prevent AudioContext auto-suspension
+  state.audioKeepAliveId = window.setInterval(playSilent, 5000);
+}
+
+function stopAudioKeepAlive() {
+  if (state.audioKeepAliveId !== null) {
+    window.clearInterval(state.audioKeepAliveId);
+    state.audioKeepAliveId = null;
+  }
 }
 
 function getAudioOutputNode(audioContext) {
@@ -519,79 +499,113 @@ function playNoiseBurst({
 }
 
 function playShotSound() {
-  playNoiseBurst({
-    duration: 0.05,
-    volume: 1.08,
-    attack: 0.0001,
-    decay: 0.03,
-    highpassFrequency: 120,
-    lowpassFrequency: 1500,
-  });
+  // Main "pew" sweep — sine wave descending fast, gives the classic sci-fi shot feel
   playTone({
-    frequency: 140,
-    endFrequency: 48,
-    duration: 0.06,
-    type: "square",
-    volume: 1.18,
+    frequency: 880,
+    endFrequency: 160,
+    duration: 0.14,
+    type: "sine",
+    volume: 1.1,
     attack: 0.0001,
-    decay: 0.032,
+    decay: 0.06,
   });
+  // Slightly detuned second layer for body and fullness
   playTone({
-    frequency: 980,
-    endFrequency: 260,
-    duration: 0.024,
-    type: "sawtooth",
-    volume: 0.42,
-    attack: 0.0001,
-    decay: 0.022,
-  });
-  playTone({
-    frequency: 72,
-    endFrequency: 38,
-    duration: 0.08,
+    frequency: 760,
+    endFrequency: 140,
+    duration: 0.12,
     type: "triangle",
-    volume: 0.4,
+    volume: 0.55,
     attack: 0.0001,
     decay: 0.05,
+  });
+  // Short high-freq click for attack crispness
+  playNoiseBurst({
+    duration: 0.012,
+    volume: 0.6,
+    attack: 0.0001,
+    decay: 0.01,
+    highpassFrequency: 3000,
+    lowpassFrequency: 8000,
   });
 }
 
 function playHitSound() {
+  // Sharp transient crack — gives the "impact" feel
   playNoiseBurst({
-    duration: 0.075,
-    volume: 0.98,
+    duration: 0.015,
+    volume: 1.8,
+    attack: 0.0001,
+    decay: 0.012,
+    highpassFrequency: 2000,
+    lowpassFrequency: 8000,
+  });
+  // Mid-range noise body — the "whomp" of the explosion
+  playNoiseBurst({
+    duration: 0.1,
+    volume: 1.2,
+    attack: 0.0001,
+    decay: 0.28,
+    highpassFrequency: 100,
+    lowpassFrequency: 1200,
+  });
+  // Deep sine boom — sine (not square!) gives a clean low-end "bwoom"
+  playTone({
+    frequency: 130,
+    endFrequency: 32,
+    duration: 0.22,
+    type: "sine",
+    volume: 1.8,
+    attack: 0.0001,
+    decay: 0.32,
+  });
+}
+
+function playArmoredHitSound() {
+  playNoiseBurst({
+    duration: 0.018,
+    volume: 1.3,
+    attack: 0.0001,
+    decay: 0.04,
+    highpassFrequency: 1800,
+    lowpassFrequency: 5500,
+  });
+  playTone({
+    frequency: 380,
+    endFrequency: 300,
+    duration: 0.09,
+    type: "triangle",
+    volume: 0.65,
     attack: 0.0001,
     decay: 0.06,
-    highpassFrequency: 280,
-    lowpassFrequency: 2200,
   });
-  playTone({
-    frequency: 620,
-    endFrequency: 170,
-    duration: 0.055,
-    type: "triangle",
-    volume: 0.78,
+}
+
+function playArmoredKillSound() {
+  playNoiseBurst({
+    duration: 0.025,
+    volume: 2.0,
     attack: 0.0001,
-    decay: 0.045,
-  });
-  playTone({
-    frequency: 110,
-    endFrequency: 52,
-    duration: 0.07,
-    type: "square",
-    volume: 0.82,
-    attack: 0.0001,
-    decay: 0.055,
-    delay: 0.004,
+    decay: 0.022,
+    highpassFrequency: 2000,
+    lowpassFrequency: 7000,
   });
   playNoiseBurst({
-    duration: 0.03,
-    volume: 0.34,
+    duration: 0.14,
+    volume: 1.5,
     attack: 0.0001,
-    decay: 0.028,
-    delay: 0.006,
-    highpassFrequency: 900,
-    lowpassFrequency: 3200,
+    decay: 0.38,
+    highpassFrequency: 80,
+    lowpassFrequency: 900,
+  });
+  playTone({
+    frequency: 220,
+    endFrequency: 38,
+    duration: 0.3,
+    type: "sine",
+    volume: 2.0,
+    attack: 0.0001,
+    decay: 0.44,
   });
 }
 
@@ -625,6 +639,42 @@ function createImpactBurst(x, y) {
   createArenaEffect("impact-burst", x, y, 260);
 }
 
+function createArmoredBurst(x, y) {
+  createArenaEffect("armored-burst", x, y, 340);
+}
+
+function createFlyingBurst(x, y) {
+  createArenaEffect("flying-burst", x, y, 400);
+}
+
+function playFlyingKillSound() {
+  playNoiseBurst({
+    duration: 0.032,
+    volume: 2.3,
+    attack: 0.0001,
+    decay: 0.028,
+    highpassFrequency: 1600,
+    lowpassFrequency: 7000,
+  });
+  playNoiseBurst({
+    duration: 0.2,
+    volume: 1.9,
+    attack: 0.0001,
+    decay: 0.46,
+    highpassFrequency: 55,
+    lowpassFrequency: 1200,
+  });
+  playTone({
+    frequency: 180,
+    endFrequency: 28,
+    duration: 0.38,
+    type: "sine",
+    volume: 2.3,
+    attack: 0.0001,
+    decay: 0.52,
+  });
+}
+
 function removeTarget(targetId, reason = "cleanup") {
   const record = state.activeTargets.get(targetId);
 
@@ -633,7 +683,34 @@ function removeTarget(targetId, reason = "cleanup") {
   }
 
   clearTargetTimers(record);
+  if (record.rafId !== null) {
+    cancelAnimationFrame(record.rafId);
+  }
   state.activeTargets.delete(targetId);
+
+  if (reason === "armored-kill") {
+    record.element.classList.remove("is-arriving", "is-holding", "is-departing");
+    record.element.classList.add("is-hit");
+    createArmoredBurst(record.position.x, record.position.y);
+    playArmoredKillSound();
+
+    window.setTimeout(() => {
+      record.element.remove();
+    }, HIT_REACTION_MS);
+
+    return;
+  }
+
+  if (reason === "flying-kill") {
+    if (record.rafId !== null) {
+      cancelAnimationFrame(record.rafId);
+    }
+    // record.x / record.y are always the current visual center (updated by rAF)
+    createFlyingBurst(record.x, record.y);
+    playFlyingKillSound();
+    record.element.remove();
+    return;
+  }
 
   if (reason === "hit") {
     record.element.classList.remove("is-arriving", "is-holding", "is-departing");
@@ -649,8 +726,14 @@ function removeTarget(targetId, reason = "cleanup") {
   }
 
   if (reason === "timeout" && state.running) {
-    state.misses += 1;
-    updateHud();
+    if (record.hitsLeft !== undefined) {
+      state.missedArmored += 1;
+    } else if (record.isFlying) {
+      state.missedFlying += 1;
+    } else {
+      state.missedTargets += 1;
+    }
+
   }
 
   record.element.remove();
@@ -685,7 +768,7 @@ function getRandomPosition(size) {
 }
 
 function createTarget() {
-  if (!state.running || state.activeTargets.size >= state.maxTargets) {
+  if (!state.running) {
     return;
   }
 
@@ -721,7 +804,7 @@ function createTarget() {
     }
 
     state.hits += 1;
-    updateHud();
+
     removeTarget(targetId, "hit");
   });
 
@@ -763,22 +846,240 @@ function createTarget() {
   });
 }
 
-function spawnTick() {
-  if (!state.running || state.activeTargets.size >= state.maxTargets) {
+function createArmoredTarget() {
+  if (!state.running) {
     return;
   }
 
-  createTarget();
+  const target = document.createElement("button");
+  const targetId = state.nextTargetId++;
+  const size = Math.round(52 + Math.random() * 32); // 52–84px, slightly bigger than regular
+  const position = getRandomPosition(size);
+  const growDuration = GROW_DURATION_MS;
+  const shrinkDuration = SHRINK_DURATION_MS;
+  const totalLife = growDuration + ARMORED_HOLD_MS + shrinkDuration;
+
+  target.type = "button";
+  target.className = "target target--armored";
+  target.dataset.targetId = String(targetId);
+  target.dataset.hitsLeft = String(ARMORED_HITS_REQUIRED);
+  target.style.width = `${size}px`;
+  target.style.height = `${size}px`;
+  target.style.left = `${position.x}px`;
+  target.style.top = `${position.y}px`;
+  target.style.setProperty("--grow-duration", `${growDuration}ms`);
+  target.style.setProperty("--shrink-duration", `${shrinkDuration}ms`);
+  target.style.setProperty("--target-font-size", `${Math.floor(size * 0.3)}px`);
+  target.setAttribute("aria-label", "Armored Target");
+
+  target.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.stopPropagation();
+
+    if (!state.running) {
+      return;
+    }
+
+    const record = state.activeTargets.get(targetId);
+    if (!record) {
+      return;
+    }
+
+    record.hitsLeft -= 1;
+    target.dataset.hitsLeft = String(record.hitsLeft);
+
+    if (record.hitsLeft <= 0) {
+      state.armoredKills += 1;
+  
+      removeTarget(targetId, "armored-kill");
+    } else {
+      target.classList.remove("is-armored-hit");
+      // Force reflow to restart animation
+      void target.offsetWidth;
+      target.classList.add("is-armored-hit");
+      playArmoredHitSound();
+    }
+  });
+
+  arena.appendChild(target);
+
+  const timerIds = [
+    window.setTimeout(() => {
+      if (!state.activeTargets.has(targetId)) return;
+      target.classList.add("is-arriving");
+    }, 20),
+    window.setTimeout(() => {
+      if (!state.activeTargets.has(targetId)) return;
+      target.classList.remove("is-arriving");
+      target.classList.add("is-holding");
+    }, growDuration),
+    window.setTimeout(() => {
+      if (!state.activeTargets.has(targetId)) return;
+      target.classList.remove("is-holding");
+      target.classList.add("is-departing");
+    }, growDuration + ARMORED_HOLD_MS),
+    window.setTimeout(() => {
+      removeTarget(targetId, "timeout");
+    }, totalLife),
+  ];
+
+  state.activeTargets.set(targetId, {
+    element: target,
+    timerIds,
+    position,
+    hitsLeft: ARMORED_HITS_REQUIRED,
+  });
+}
+
+function createFlyingTarget() {
+  if (!state.running) {
+    return;
+  }
+
+  const flyingLifetime = DIFFICULTY_PRESETS[state.difficulty].flyingLifetime;
+
+  const rect = arena.getBoundingClientRect();
+  const padding = 40;
+  const startX = padding + Math.random() * Math.max(1, rect.width - padding * 2);
+  const startY = padding + Math.random() * Math.max(1, rect.height - padding * 2);
+
+  const initialAngle = Math.random() * Math.PI * 2;
+
+  const target = document.createElement("button");
+  const targetId = state.nextTargetId++;
+
+  target.type = "button";
+  target.className = "target target--flying";
+  target.dataset.targetId = String(targetId);
+  target.style.width = `${FLYING_SIZE}px`;
+  target.style.height = `${FLYING_SIZE}px`;
+  target.style.left = `${startX}px`;
+  target.style.top = `${startY}px`;
+  target.style.transform = `translate(-50%, -50%) rotate(${initialAngle * (180 / Math.PI) + 90}deg)`;
+  target.setAttribute("aria-label", "Flying Target");
+
+  target.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.stopPropagation();
+
+    if (!state.running) {
+      return;
+    }
+
+    state.flyingKills += 1;
+
+    removeTarget(targetId, "flying-kill");
+  });
+
+  arena.appendChild(target);
+
+  const record = {
+    element: target,
+    timerIds: [],
+    position: { x: startX, y: startY },
+    isFlying: true,
+    x: startX,
+    y: startY,
+    angle: initialAngle,
+    rafId: null,
+  };
+
+  state.activeTargets.set(targetId, record);
+
+  // Start rAF loop after a brief delay (so element is in DOM)
+  const showTimerId = window.setTimeout(() => {
+    if (!state.activeTargets.has(targetId)) {
+      return;
+    }
+
+    target.classList.add("is-flying");
+
+    const speedPxMs = FLYING_SPEED_PX_S / 1000;
+    let lastTime = performance.now();
+    let angularVel = (Math.random() - 0.5) * 0.003; // rad/ms — turning rate
+    let nextTurnMs = 600 + Math.random() * 700;      // time until next direction change
+
+    function frame(now) {
+      if (!state.running || !state.activeTargets.has(targetId)) {
+        return;
+      }
+
+      const dt = Math.min(now - lastTime, 50); // cap to avoid huge jumps on tab switch
+      lastTime = now;
+
+      // Randomly change turning rate every 0.6–1.3 seconds
+      nextTurnMs -= dt;
+      if (nextTurnMs <= 0) {
+        angularVel = (Math.random() - 0.5) * 0.003;
+        nextTurnMs = 600 + Math.random() * 700;
+      }
+
+      record.angle += angularVel * dt;
+
+      record.x += Math.cos(record.angle) * speedPxMs * dt;
+      record.y += Math.sin(record.angle) * speedPxMs * dt;
+
+      // Reflect off arena walls so jet stays visible the whole lifetime
+      const arenaW = arena.clientWidth;
+      const arenaH = arena.clientHeight;
+      const wall = FLYING_SIZE / 2 + 4;
+
+      if (record.x < wall) {
+        record.x = wall;
+        record.angle = Math.PI - record.angle;
+      } else if (record.x > arenaW - wall) {
+        record.x = arenaW - wall;
+        record.angle = Math.PI - record.angle;
+      }
+
+      if (record.y < wall) {
+        record.y = wall;
+        record.angle = -record.angle;
+      } else if (record.y > arenaH - wall) {
+        record.y = arenaH - wall;
+        record.angle = -record.angle;
+      }
+
+      const rotDeg = record.angle * (180 / Math.PI) + 90;
+      target.style.left = `${record.x}px`;
+      target.style.top = `${record.y}px`;
+      target.style.transform = `translate(-50%, -50%) rotate(${rotDeg}deg)`;
+
+      record.rafId = requestAnimationFrame(frame);
+    }
+
+    record.rafId = requestAnimationFrame(frame);
+  }, 20);
+
+  const removeTimerId = window.setTimeout(() => {
+    removeTarget(targetId, "timeout");
+  }, flyingLifetime);
+
+  record.timerIds = [showTimerId, removeTimerId];
+}
+
+function spawnTick() {
+  if (!state.running) {
+    return;
+  }
+
+  for (let i = 0; i < state.maxTargets; i++) {
+    createTarget();
+  }
 }
 
 function renderTimeLeft() {
   if (!state.running) {
-    timeDisplay.textContent = formatTime(state.remainingMs);
     return;
   }
 
   state.remainingMs = Math.max(0, state.startTime + state.totalSeconds * 1000 - Date.now());
-  timeDisplay.textContent = formatTime(state.remainingMs);
 
   if (state.remainingMs <= 0) {
     finishSession();
@@ -787,20 +1088,15 @@ function renderTimeLeft() {
 
 function collectSettings() {
   const duration = clamp(Number(durationInput.value) || 30, 10, 1800);
-  const spawn = clamp(Number(spawnInput.value) || 500, 120, 2500);
-  const hold = clamp(Number(lifetimeInput.value) || 500, 100, 5000);
-  const concurrent = clamp(Number(concurrentInput.value) || 5, 1, 12);
-
   durationInput.value = String(duration);
-  spawnInput.value = String(spawn);
-  lifetimeInput.value = String(hold);
-  concurrentInput.value = String(concurrent);
+
+  const preset = DIFFICULTY_PRESETS[state.difficulty] || DIFFICULTY_PRESETS.medium;
 
   return {
     duration,
-    spawn,
-    hold,
-    concurrent,
+    spawn: preset.spawn,
+    hold: preset.hold,
+    concurrent: preset.concurrent,
   };
 }
 
@@ -811,16 +1107,18 @@ function syncPreviewTime() {
 
   const previewDuration = clamp(Number(durationInput.value) || 30, 10, 1800);
   state.remainingMs = previewDuration * 1000;
-  timeDisplay.textContent = formatTime(state.remainingMs);
 }
 
 function resetStats() {
   state.clicks = 0;
   state.hits = 0;
-  state.misses = 0;
+  state.armoredKills = 0;
+  state.flyingKills = 0;
+  state.missedTargets = 0;
+  state.missedArmored = 0;
+  state.missedFlying = 0;
   state.elapsedMs = 0;
   state.remainingMs = state.totalSeconds * 1000;
-  updateHud();
   renderTimeLeft();
   updateControls();
 }
@@ -849,6 +1147,9 @@ async function finishSession() {
     clearCountdownLoop();
     clearArenaTargets();
     hideCountdownOverlay();
+    stopAudioKeepAlive();
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
     arena.classList.remove("is-running");
     introOverlay.classList.remove("hidden");
     resultOverlay.classList.add("hidden");
@@ -869,24 +1170,26 @@ async function finishSession() {
   clearCountdownLoop();
   clearArenaTargets();
   hideCountdownOverlay();
+  stopAudioKeepAlive();
+  bgMusic.pause();
+  bgMusic.currentTime = 0;
   arena.classList.remove("is-running");
 
-  const totalAttempts = getTotalAttempts();
-  const missClicks = getMissClicks();
-  const accuracy = totalAttempts > 0 ? (state.hits / totalAttempts) * 100 : 0;
   const score = getScore();
-  const speed = elapsedMs > 0 ? state.hits / (elapsedMs / 1000) : 0;
 
   resultScore.textContent = String(score);
-  resultHits.textContent = String(state.hits);
-  resultClicks.textContent = String(missClicks);
-  resultAccuracy.textContent = `${accuracy.toFixed(1)}%`;
-  resultSpeed.textContent = formatSpeed(speed);
   resultDuration.textContent = formatTime(elapsedMs);
+  resultDifficulty.textContent = translations[state.language][`diff${state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1)}`];
 
-  updateHud();
   renderTimeLeft();
   updateControls();
+
+  const timeupOverlay = document.getElementById("timeup-overlay");
+  const timeupValue = document.getElementById("timeup-value");
+  timeupValue.textContent = state.language === "ru" ? "ВРЕМЯ ВЫШЛО" : "TIME UP";
+  timeupOverlay.classList.remove("hidden");
+  await new Promise((resolve) => window.setTimeout(resolve, 1000));
+  timeupOverlay.classList.add("hidden");
 
   await exitArenaFullscreen();
 
@@ -919,18 +1222,28 @@ function beginSession() {
   arena.focus();
   updateControls();
 
-  for (let index = 0; index < Math.min(2, state.maxTargets); index += 1) {
-    spawnTick();
-  }
+  spawnTick();
 
   state.spawnTimerId = window.setInterval(() => {
     spawnTick();
   }, state.spawnInterval);
 
+  state.armoredSpawnTimerId = window.setInterval(() => {
+    createArmoredTarget();
+  }, ARMORED_SPAWN_INTERVAL_MS);
+
+  state.flyingSpawnTimerId = window.setInterval(() => {
+    createFlyingTarget();
+  }, FLYING_SPAWN_INTERVAL_MS);
+
   state.countdownTimerId = window.setInterval(() => {
     renderTimeLeft();
-    updateHud();
+
   }, 100);
+
+  bgMusic.currentTime = 0;
+  bgMusic.play().catch(() => {});
+  startAudioKeepAlive();
 }
 
 function startCountdown(onComplete) {
@@ -976,6 +1289,8 @@ async function startSession() {
     return;
   }
 
+  prewarmAudio();
+
   state.preparing = true;
   resultOverlay.classList.add("hidden");
   introOverlay.classList.add("hidden");
@@ -1012,15 +1327,29 @@ langRuButton.addEventListener("click", () => {
   setLanguage("ru");
 });
 
-fullscreenButton.addEventListener("click", () => {
-  enterArenaFullscreen();
+function setMute(muted) {
+  state.muted = muted;
+  bgMusic.muted = muted;
+  if (state.audioMasterGain) {
+    state.audioMasterGain.gain.value = muted ? 0 : 2.8;
+  }
+  muteBtn.classList.toggle("is-muted", muted);
+}
+
+muteBtn.addEventListener("click", () => {
+  setMute(!state.muted);
 });
 
-if (overlayFullscreenButton) {
-  overlayFullscreenButton.addEventListener("click", () => {
-    enterArenaFullscreen();
+difficultyButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    if (state.running || state.preparing) {
+      return;
+    }
+    state.difficulty = button.dataset.difficulty;
+    difficultyButtons.forEach((b) => b.classList.toggle("is-active", b === button));
   });
-}
+});
+
 
 stopButton.addEventListener("click", () => {
   finishSession();
@@ -1044,8 +1373,6 @@ arena.addEventListener("pointerdown", (event) => {
   }
 
   state.clicks += 1;
-  state.misses += 1;
-  updateHud();
   createMissMarker(event.clientX, event.clientY);
 });
 
@@ -1068,12 +1395,8 @@ window.addEventListener("resize", () => {
     return;
   }
 
-  const targetCount = Math.min(state.activeTargets.size || 1, state.maxTargets);
   clearArenaTargets();
-
-  for (let index = 0; index < targetCount; index += 1) {
-    spawnTick();
-  }
+  spawnTick();
 });
 
 document.addEventListener("fullscreenchange", () => {

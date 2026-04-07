@@ -14,33 +14,21 @@
         <h1 id="brand-title">Click Training</h1>
       </div>
 
+      <a class="github-link" href="https://github.com/talgat-sec" target="_blank" rel="noopener noreferrer" aria-label="Developer on GitHub">
+        <svg class="github-link__icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.341-3.369-1.341-.454-1.154-1.11-1.462-1.11-1.462-.907-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.744 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        <span class="github-link__text">talgat-sec</span>
+      </a>
+
       <div class="lang-switch" role="group" aria-label="Language switcher">
         <button id="lang-en" class="lang-switch__btn is-active" type="button">EN</button>
         <button id="lang-ru" class="lang-switch__btn" type="button">RU</button>
       </div>
 
-      <div class="hud" aria-live="polite">
-        <div class="hud__item hud__item--score">
-          <span class="hud__label" id="hud-score-label">Score</span>
-          <span class="hud__value hud__value--accent hud__value--score" id="score-display">0</span>
-        </div>
-        <div class="hud__item">
-          <span class="hud__label" id="hud-time-label">Time</span>
-          <span class="hud__value" id="time-display">00:00</span>
-        </div>
-        <div class="hud__item">
-          <span class="hud__label" id="hud-hits-label">Accurate Clicks</span>
-          <span class="hud__value" id="hits-display">0</span>
-        </div>
-        <div class="hud__item">
-          <span class="hud__label" id="hud-clicks-label">Free Clicks</span>
-          <span class="hud__value" id="clicks-display">0</span>
-        </div>
-        <div class="hud__item">
-          <span class="hud__label" id="hud-speed-label">Speed</span>
-          <span class="hud__value" id="speed-display">0.00 t/s</span>
-        </div>
-      </div>
+      <button id="mute-btn" class="mute-btn" type="button" aria-label="Toggle sound">
+        <svg class="icon-on" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+        <svg class="icon-off" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+      </button>
+
     </header>
 
     <main class="trainer-layout">
@@ -53,49 +41,28 @@
             <label class="field">
               <span id="duration-label">Duration</span>
               <div class="field__inline">
-                <input id="duration-input" name="duration" type="number" min="10" max="1800" step="10" value="30">
+                <input id="duration-input" name="duration" type="number" min="10" max="1800" step="10" value="120">
                 <span class="field__suffix" id="duration-suffix">sec</span>
               </div>
             </label>
 
             <div class="preset-row" id="duration-presets" role="group" aria-label="Quick time presets">
-              <button class="preset-btn is-active" type="button" data-duration="60" id="preset-60">1 min</button>
-              <button class="preset-btn" type="button" data-duration="120" id="preset-120">2 min</button>
+              <button class="preset-btn" type="button" data-duration="30" id="preset-30">30 sec</button>
+              <button class="preset-btn" type="button" data-duration="60" id="preset-60">1 min</button>
+              <button class="preset-btn" type="button" data-duration="90" id="preset-90">1.5 min</button>
+              <button class="preset-btn is-active" type="button" data-duration="120" id="preset-120">2 min</button>
+              <button class="preset-btn" type="button" data-duration="150" id="preset-150">2.5 min</button>
+              <button class="preset-btn" type="button" data-duration="180" id="preset-180">3 min</button>
+              <button class="preset-btn" type="button" data-duration="240" id="preset-240">4 min</button>
               <button class="preset-btn" type="button" data-duration="300" id="preset-300">5 min</button>
             </div>
 
-            <label class="field">
-              <span id="spawn-label">Spawn Interval</span>
-              <div class="field__inline">
-                <input id="spawn-input" name="spawn" type="number" min="120" max="2500" step="10" value="500">
-                <span class="field__suffix" id="spawn-suffix">ms</span>
-              </div>
-            </label>
-
-            <label class="field">
-              <span id="lifetime-label">Hold at Full Size</span>
-              <div class="field__inline">
-                <input id="lifetime-input" name="lifetime" type="number" min="100" max="5000" step="10" value="500">
-                <span class="field__suffix" id="lifetime-suffix">ms</span>
-              </div>
-            </label>
-
-            <label class="field">
-              <span id="concurrent-label">Targets at Once</span>
-              <div class="field__inline">
-                <input id="concurrent-input" name="concurrent" type="number" min="1" max="12" step="1" value="5">
-                <span class="field__suffix" id="concurrent-suffix">pcs</span>
-              </div>
-            </label>
-
-            <div class="tips">
-              <div>
-                <span class="tips__label" id="tip-label">Tip</span>
-                <p id="tip-line-1">For a more aggressive warmup, try this setup:</p>
-                <p id="tip-line-2">— spawn interval: 120 ms</p>
-                <p id="tip-line-3">— hold at full size: 120 ms</p>
-                <p id="tip-line-4">— targets at once: 12</p>
-                <p id="tip-line-5">This mode gives you a faster pace and works well for maximum-aggression warmups.</p>
+            <div class="field">
+              <span id="difficulty-label">Difficulty</span>
+              <div class="difficulty-row" id="difficulty-btns" role="group" aria-label="Difficulty">
+                <button class="difficulty-btn" type="button" data-difficulty="easy" id="diff-easy">Easy</button>
+                <button class="difficulty-btn is-active" type="button" data-difficulty="medium" id="diff-medium">Medium</button>
+                <button class="difficulty-btn" type="button" data-difficulty="hard" id="diff-hard">Hard</button>
               </div>
             </div>
           </form>
@@ -107,17 +74,13 @@
           <div class="arena-grid" aria-hidden="true"></div>
           <div class="arena" id="arena" tabindex="0" aria-label="Game field"></div>
           <div class="arena-tools" id="arena-tools" aria-label="Game controls">
-            <button id="fullscreen-button" class="tool-btn" type="button">Fullscreen</button>
             <button id="stop-button" class="tool-btn tool-btn--danger" type="button" disabled>Stop</button>
           </div>
 
           <div class="overlay-card overlay-card--intro" id="intro-overlay">
             <p class="overlay-card__eyebrow" id="intro-eyebrow">Ready Check</p>
             <h2 id="intro-title">Click Warmup Before the Match.</h2>
-            <p id="intro-copy">
-              Your score grows from accurate clicks on targets and free clicks between them. This training values both precision and tempo.
-            </p>
-            <p class="overlay-card__note" id="intro-note">Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, and Fortnite.</p>
+            <p class="overlay-card__note" id="intro-note">Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2, and League of Legends.</p>
             <div class="overlay-actions">
               <button id="overlay-start-button" class="action-btn" type="button">Start Session</button>
             </div>
@@ -125,6 +88,10 @@
 
           <div class="countdown-overlay hidden" id="countdown-overlay" aria-live="assertive" aria-atomic="true">
             <span id="countdown-value">3</span>
+          </div>
+
+          <div class="timeup-overlay hidden" id="timeup-overlay" aria-live="assertive" aria-atomic="true">
+            <span id="timeup-value">TIME UP</span>
           </div>
 
           <div class="overlay-card overlay-card--result hidden" id="result-overlay">
@@ -136,33 +103,33 @@
                 <dd id="result-score">0</dd>
               </div>
               <div>
-                <dt id="result-hits-label">Accurate Clicks</dt>
-                <dd id="result-hits">0</dd>
-              </div>
-              <div>
-                <dt id="result-clicks-label">Free Clicks</dt>
-                <dd id="result-clicks">0</dd>
-              </div>
-              <div>
-                <dt id="result-accuracy-label">Accuracy</dt>
-                <dd id="result-accuracy">0%</dd>
-              </div>
-              <div>
-                <dt id="result-speed-label">Speed</dt>
-                <dd id="result-speed">0.00 t/s</dd>
-              </div>
-              <div>
                 <dt id="result-duration-label">Round</dt>
                 <dd id="result-duration">00:00</dd>
               </div>
+              <div>
+                <dt id="result-difficulty-label">Difficulty</dt>
+                <dd id="result-difficulty">Medium</dd>
+              </div>
             </dl>
-            <div class="result-explainer">
-              <p class="result-explainer__title" id="results-info-title">How Score Works</p>
-              <p id="results-info-line-1">Your score is built from two kinds of clicks:</p>
-              <p id="results-info-line-2">— accurate clicks are direct hits on targets</p>
-              <p id="results-info-line-3">— free clicks are extra clicks between targets</p>
-              <p id="results-info-line-4">Both categories add to your total score.</p>
-              <p id="results-info-line-5">The goal is not only accuracy, but also overall click activity, so you can warm up your hand and get up to speed before a game.</p>
+            <div class="score-legend">
+              <p class="score-legend__title" id="score-legend-title">How Points Work</p>
+              <div class="score-legend__grid">
+                <div class="score-legend__group">
+                  <span class="score-legend__name" id="score-legend-normal">Normal target</span>
+                  <span class="score-legend__pos">+20 <span id="score-legend-hit">on hit</span></span>
+                  <span class="score-legend__neg">−20 <span id="score-legend-miss-normal">on miss</span></span>
+                </div>
+                <div class="score-legend__group">
+                  <span class="score-legend__name" id="score-legend-armored">Armored target</span>
+                  <span class="score-legend__pos">+50 <span id="score-legend-destroy">on destroy</span></span>
+                  <span class="score-legend__neg">−200 <span id="score-legend-miss-armored">on miss</span></span>
+                </div>
+                <div class="score-legend__group">
+                  <span class="score-legend__name" id="score-legend-flying">Flying target</span>
+                  <span class="score-legend__pos">+50 <span id="score-legend-hit-flying">on hit</span></span>
+                  <span class="score-legend__neg">−200 <span id="score-legend-miss-flying">on miss</span></span>
+                </div>
+              </div>
             </div>
             <button id="restart-button" class="action-btn" type="button">Start Session</button>
           </div>
