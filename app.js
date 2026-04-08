@@ -18,9 +18,12 @@ const langRuButton = document.getElementById("lang-ru");
 const presetButtons = Array.from(document.querySelectorAll(".preset-btn"));
 const muteBtn = document.getElementById("mute-btn");
 
-const bgMusic = new Audio("assets/audio/battle-theme.mp3");
-bgMusic.loop = true;
-bgMusic.volume = 0.35;
+const bgTracks = [
+  new Audio("assets/audio/battle-theme.mp3"),
+  new Audio("assets/audio/battle-theme_2.mp3"),
+];
+bgTracks.forEach(t => { t.loop = true; t.volume = 0.35; });
+let bgMusic = bgTracks[0];
 
 const resultScore = document.getElementById("result-score");
 const resultDuration = document.getElementById("result-duration");
@@ -1241,9 +1244,6 @@ function beginSession() {
 
   }, 100);
 
-  bgMusic.currentTime = 0;
-  bgMusic.play().catch(() => {});
-  startAudioKeepAlive();
 }
 
 function startCountdown(onComplete) {
@@ -1301,6 +1301,13 @@ async function startSession() {
   updateControls();
 
   await enterArenaFullscreen();
+
+  bgTracks.forEach(t => { t.pause(); t.currentTime = 0; });
+  bgMusic = bgTracks[Math.random() < 0.65 ? 0 : 1];
+  bgMusic.muted = state.muted;
+  bgMusic.play().catch(() => {});
+  startAudioKeepAlive();
+
   startCountdown(() => {
     beginSession();
   });
@@ -1329,7 +1336,7 @@ langRuButton.addEventListener("click", () => {
 
 function setMute(muted) {
   state.muted = muted;
-  bgMusic.muted = muted;
+  bgTracks.forEach(t => { t.muted = muted; });
   if (state.audioMasterGain) {
     state.audioMasterGain.gain.value = muted ? 0 : 2.8;
   }

@@ -23,11 +23,12 @@
 
 html,
 body {
-  min-height: 100%;
+  height: 100%;
 }
 
 body {
   margin: 0;
+  overflow: hidden;
   color: var(--text);
   font-family: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
   background:
@@ -43,9 +44,12 @@ input {
 }
 
 .page-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   width: min(1480px, calc(100% - 24px));
   margin: 0 auto;
-  padding: 10px 0 12px;
+  padding: clamp(6px, 0.7vh, 10px) 0 clamp(6px, 0.8vh, 12px);
 }
 
 .topbar {
@@ -53,7 +57,8 @@ input {
   justify-content: space-between;
   gap: 12px;
   align-items: end;
-  margin-bottom: 8px;
+  margin-bottom: clamp(4px, 0.5vh, 8px);
+  flex-shrink: 0;
 }
 
 .github-link {
@@ -179,22 +184,26 @@ input {
 
 .trainer-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
-  gap: 12px;
-  min-height: calc(100dvh - 76px);
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
 }
 
 .control-panel {
   display: flex;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .panel-card {
   width: 100%;
-  padding: 16px;
+  padding: clamp(10px, 1.2vh, 16px);
   border: 1px solid var(--line);
   border-radius: 28px;
   background: linear-gradient(180deg, rgba(7, 37, 56, 0.96), rgba(4, 24, 38, 0.94));
   box-shadow: var(--shadow);
+  overflow-y: auto;
 }
 
 .panel-card h2,
@@ -214,8 +223,8 @@ input {
 
 .settings-form {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
+  gap: clamp(6px, 0.8vh, 10px);
+  margin-top: clamp(6px, 0.8vh, 12px);
 }
 
 .field {
@@ -270,7 +279,7 @@ input {
 }
 
 .preset-btn {
-  padding: 9px 6px;
+  padding: clamp(5px, 0.7vh, 9px) 6px;
   color: var(--text);
   font-size: 0.76rem;
   white-space: nowrap;
@@ -298,7 +307,7 @@ input {
 }
 
 .difficulty-btn {
-  padding: 10px 8px;
+  padding: clamp(6px, 0.8vh, 10px) 8px;
   color: var(--text);
   font-size: 0.8rem;
   font-weight: 700;
@@ -368,11 +377,15 @@ input {
 
 .arena-section {
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .arena-frame {
   position: relative;
-  min-height: 100%;
+  flex: 1;
+  min-height: 0;
   border-radius: var(--radius-xl);
   overflow: hidden;
   border: 1px solid var(--line);
@@ -391,7 +404,8 @@ input {
 
 .arena {
   position: relative;
-  min-height: calc(100dvh - 112px);
+  height: 100%;
+  min-height: 0;
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%235dff5d' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M16 2v9'/%3E%3Cpath d='M16 21v9'/%3E%3Cpath d='M2 16h9'/%3E%3Cpath d='M21 16h9'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%235dff5d'/%3E%3C/svg%3E") 16 16, crosshair;
   isolation: isolate;
 }
@@ -771,7 +785,8 @@ input {
 }
 
 .arena-section:fullscreen .arena {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
 }
 
 .arena-section:fullscreen .arena-tools {
@@ -779,14 +794,91 @@ input {
   right: 24px;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 780px) {
+  body {
+    overflow-y: auto;
+  }
+
+  .page-shell {
+    height: auto;
+    min-height: 100%;
+    width: calc(100% - 16px);
+    padding: 8px 0;
+  }
+
+  /* Compact topbar */
+  .topbar {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .brand h1 {
+    font-size: 1.3rem;
+  }
+
+  .brand__eyebrow {
+    display: none;
+  }
+
+  .github-link__text {
+    display: none;
+  }
+
+  .github-link {
+    padding: 7px;
+  }
+
+  /* Compact settings panel */
   .trainer-layout {
     grid-template-columns: 1fr;
+    flex: none;
     min-height: auto;
+    gap: 8px;
+  }
+
+  .panel-card {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .panel-card h2 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  .panel-card__eyebrow {
+    display: none;
+  }
+
+  .settings-form {
+    margin-top: 8px;
+  }
+
+  .preset-btn {
+    padding: 6px 4px;
+    font-size: 0.72rem;
+  }
+
+  .difficulty-btn {
+    padding: 7px 6px;
+    font-size: 0.76rem;
+  }
+
+  /* Arena */
+  .arena-frame {
+    flex: none;
+    min-height: auto;
+    border-radius: 20px;
   }
 
   .arena {
-    min-height: 62vh;
+    height: auto;
+    min-height: 58vh;
+  }
+
+  /* Hide stop button on mobile */
+  .arena-tools {
+    display: none;
   }
 }
 
@@ -1011,20 +1103,6 @@ input {
 }
 
 @media (max-width: 760px) {
-  .page-shell {
-    width: min(100% - 18px, 100%);
-    padding-top: 12px;
-  }
-
-  .topbar {
-    align-items: start;
-    flex-direction: column;
-  }
-
-  .lang-switch {
-    align-self: flex-start;
-  }
-
   .hud {
     width: 100%;
     justify-content: start;
@@ -1034,28 +1112,7 @@ input {
     min-width: calc(50% - 8px);
   }
 
-  .panel-card,
   .overlay-card {
-    padding: 18px;
-  }
-
-  .results-grid,
-  .preset-row {
-    grid-template-columns: 1fr;
-  }
-
-  .arena-tools {
-    top: 16px;
-    right: 16px;
-    left: 16px;
-    justify-content: stretch;
-  }
-
-  .tool-btn {
-    flex: 1 1 150px;
-  }
-
-  .arena {
-    min-height: 54vh;
+    padding: 16px;
   }
 }
