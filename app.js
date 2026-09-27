@@ -61,7 +61,8 @@ const uiText = {
 
 const translations = {
   en: {
-    documentTitle: "Click Training",
+    documentTitle: "Free Aim Trainer for CS2, Call of Duty and FPS Games | Click Training",
+    description: "Free browser aim trainer to practice clicks and reaction speed. Warm up before Counter-Strike 2, Call of Duty, VALORANT, Apex Legends and other games.",
     brandEyebrow: "Reaction Warmup",
     brandTitle: "Click Training",
     settingsEyebrow: "Session Setup",
@@ -105,7 +106,8 @@ const translations = {
     langSwitcherLabel: "Language switcher",
   },
   ru: {
-    documentTitle: "Тренировка клика",
+    documentTitle: "Тренировка аима онлайн перед CS2 и Call of Duty | Click Training",
+    description: "Бесплатный тренажёр аима и реакции в браузере. Разомнитесь перед Counter-Strike 2, Call of Duty, VALORANT, Apex Legends и другими играми.",
     brandEyebrow: "Разогрев реакции",
     brandTitle: "Тренировка клика",
     settingsEyebrow: "Параметры Сессии",
@@ -249,6 +251,10 @@ function applyLanguage() {
 
   document.documentElement.lang = state.language;
   document.title = copy.documentTitle;
+  document.querySelector('meta[name="description"]')?.setAttribute("content", copy.description);
+  if (!state.running && !state.preparing && !resultOverlay.classList.contains("hidden")) {
+    resultDifficulty.textContent = copy[`diff${state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1)}`];
+  }
 
   Object.entries(uiText).forEach(([key, element]) => {
     if (element && copy[key]) {
