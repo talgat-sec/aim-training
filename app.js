@@ -28,6 +28,23 @@ let bgMusic = bgTracks[0];
 const resultScore = document.getElementById("result-score");
 const resultDuration = document.getElementById("result-duration");
 const resultDifficulty = document.getElementById("result-difficulty");
+const leaderboardOpenButton = document.getElementById("leaderboard-open-button");
+const leaderboardDialog = document.getElementById("leaderboard-dialog");
+const leaderboardCloseButton = document.getElementById("leaderboard-close-button");
+const leaderboardDuration = document.getElementById("leaderboard-duration");
+const leaderboardDifficulty = document.getElementById("leaderboard-difficulty");
+const leaderboardList = document.getElementById("leaderboard-list");
+const leaderboardStatus = document.getElementById("leaderboard-status");
+const resultLeaderboardButton = document.getElementById("result-leaderboard-button");
+const scoreSubmitForm = document.getElementById("score-submit-form");
+const scoreSubmitStatus = document.getElementById("score-submit-status");
+const saveScoreButton = document.getElementById("save-score-button");
+const playerName = document.getElementById("player-name");
+let scoreStatusKey = "";
+let scoreStatusRank = 0;
+let leaderboardStatusKey = "";
+let leaderboardRequestId = 0;
+
 
 const uiText = {
   brandEyebrow: document.getElementById("brand-eyebrow"),
@@ -53,6 +70,13 @@ const uiText = {
   resultScoreLabel: document.getElementById("result-score-label"),
   resultDurationLabel: document.getElementById("result-duration-label"),
   resultDifficultyLabel: document.getElementById("result-difficulty-label"),
+  leaderboardOpenLabel: document.getElementById("leaderboard-open-label"),
+  leaderboardTitle: document.getElementById("leaderboard-title"),
+  leaderboardDurationLabel: document.getElementById("leaderboard-duration-label"),
+  leaderboardDifficultyLabel: document.getElementById("leaderboard-difficulty-label"),
+  playerNameLabel: document.getElementById("player-name-label"),
+  saveScoreButton,
+  resultLeaderboardButton,
   scoreLegendTitle: document.getElementById("score-legend-title"),
   scoreLegendNormal: document.getElementById("score-legend-normal"),
   scoreLegendArmored: document.getElementById("score-legend-armored"),
@@ -96,6 +120,24 @@ const translations = {
     resultScoreLabel: "Score",
     resultDurationLabel: "Round",
     resultDifficultyLabel: "Difficulty",
+    leaderboardOpenLabel: "Leaderboard",
+    leaderboardTitle: "Top 10 Players",
+    leaderboardDurationLabel: "Duration (sec)",
+    leaderboardDifficultyLabel: "Difficulty",
+    playerNameLabel: "Nickname",
+    nicknamePlaceholder: "Your nickname",
+    saveScoreButton: "Save score",
+    resultLeaderboardButton: "View leaderboard",
+    leaderboardLoading: "Loading leaderboard…",
+    leaderboardEmpty: "No scores for this mode yet.",
+    leaderboardError: "Could not load leaderboard.",
+    leaderboardInvalidMode: "Choose a valid duration (10–1800 sec, steps of 10).",
+    savingScore: "Saving score…",
+    saveSuccess: "Saved! Your rank is #{rank}.",
+    saveNotTopTen: "This score did not reach the top 10.",
+    saveNotBest: "You already have a better score with this nickname.",
+    saveError: "Could not save your score. Please try again.",
+    completeRound: "Finish the full round to save your score.",
     scoreLegendTitle: "How Points Work",
     scoreLegendNormal: "Normal target",
     scoreLegendArmored: "Armored target",
@@ -141,6 +183,24 @@ const translations = {
     resultScoreLabel: "Счёт",
     resultDurationLabel: "Раунд",
     resultDifficultyLabel: "Сложность",
+    leaderboardOpenLabel: "Рейтинг",
+    leaderboardTitle: "Топ-10 игроков",
+    leaderboardDurationLabel: "Длительность (сек)",
+    leaderboardDifficultyLabel: "Сложность",
+    playerNameLabel: "Ник",
+    nicknamePlaceholder: "Ваш ник",
+    saveScoreButton: "Сохранить результат",
+    resultLeaderboardButton: "Посмотреть рейтинг",
+    leaderboardLoading: "Загрузка рейтинга…",
+    leaderboardEmpty: "В этом режиме пока нет результатов.",
+    leaderboardError: "Не удалось загрузить рейтинг.",
+    leaderboardInvalidMode: "Выберите время от 10 до 1800 сек с шагом 10.",
+    savingScore: "Сохраняем результат…",
+    saveSuccess: "Сохранено! Ваше место: №{rank}.",
+    saveNotTopTen: "Результат не вошёл в топ-10.",
+    saveNotBest: "Под этим ником уже есть лучший результат.",
+    saveError: "Не удалось сохранить результат. Попробуйте ещё раз.",
+    completeRound: "Завершите полный раунд, чтобы сохранить результат.",
     scoreLegendTitle: "Как начисляются очки",
     scoreLegendNormal: "Обычная цель",
     scoreLegendArmored: "Бронированная цель",
@@ -190,6 +250,7 @@ const state = {
   startTime: 0,
   remainingMs: 120000,
   elapsedMs: 0,
+  lastCompletedResult: null,
   countdownTimerId: null,
   spawnTimerId: null,
   armoredSpawnTimerId: null,
@@ -283,6 +344,14 @@ function applyLanguage() {
   document.getElementById("score-legend-miss-armored").textContent = copy.scoreLegendMiss;
   document.getElementById("score-legend-miss-flying").textContent = copy.scoreLegendMiss;
 
+  leaderboardOpenButton.setAttribute("aria-label", copy.leaderboardOpenLabel);
+  leaderboardCloseButton.setAttribute("aria-label", state.language === "ru" ? "Закрыть" : "Close");
+  playerName.placeholder = copy.nicknamePlaceholder;
+  for (const option of leaderboardDifficulty.options) {
+    option.textContent = copy["diff" + option.value.charAt(0).toUpperCase() + option.value.slice(1)];
+  }
+  setScoreStatus(scoreStatusKey, scoreStatusRank);
+  setLeaderboardStatus(leaderboardStatusKey);
   updateLanguageButtons();
 }
 
@@ -1190,6 +1259,16 @@ async function finishSession() {
   resultDuration.textContent = formatTime(elapsedMs);
   resultDifficulty.textContent = translations[state.language][`diff${state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1)}`];
 
+  const completed = elapsedMs >= state.totalSeconds * 1000 - 1000;
+  state.lastCompletedResult = completed ? {
+    score,
+    duration: state.totalSeconds,
+    difficulty: state.difficulty,
+  } : null;
+  scoreSubmitForm.classList.toggle("hidden", !completed);
+  saveScoreButton.disabled = false;
+  setScoreStatus(completed ? "" : "completeRound");
+
   renderTimeLeft();
   updateControls();
 
@@ -1204,6 +1283,69 @@ async function finishSession() {
 
   resultOverlay.classList.remove("hidden");
   introOverlay.classList.add("hidden");
+}
+
+function setScoreStatus(key, rank = 0) {
+  scoreStatusKey = key;
+  scoreStatusRank = rank;
+  const message = key ? translations[state.language][key] || "" : "";
+  scoreSubmitStatus.textContent = message.replace("{rank}", String(rank));
+}
+
+function setLeaderboardStatus(key) {
+  leaderboardStatusKey = key;
+  leaderboardStatus.textContent = key ? translations[state.language][key] || "" : "";
+}
+
+function renderLeaderboard(entries) {
+  leaderboardList.replaceChildren();
+  for (const entry of entries) {
+    const item = document.createElement("li");
+    const row = document.createElement("div");
+    const name = document.createElement("span");
+    const score = document.createElement("span");
+    row.className = "leaderboard-list__row";
+    name.className = "leaderboard-list__name";
+    score.className = "leaderboard-list__score";
+    name.textContent = entry.nickname;
+    score.textContent = String(entry.score);
+    row.append(name, score);
+    item.append(row);
+    leaderboardList.append(item);
+  }
+}
+
+async function loadLeaderboard() {
+  const requestId = ++leaderboardRequestId;
+  const duration = Number(leaderboardDuration.value);
+  const difficulty = leaderboardDifficulty.value;
+  leaderboardList.replaceChildren();
+  if (!Number.isInteger(duration) || duration < 10 || duration > 1800 || duration % 10 !== 0) {
+    setLeaderboardStatus("leaderboardInvalidMode");
+    return;
+  }
+  setLeaderboardStatus("leaderboardLoading");
+  try {
+    const params = new URLSearchParams({ duration: String(duration), difficulty });
+    const response = await fetch("/api/leaderboard?" + params, { cache: "no-store" });
+    if (!response.ok) throw new Error("Leaderboard request failed");
+    const data = await response.json();
+    if (requestId !== leaderboardRequestId) return;
+    const entries = Array.isArray(data.entries) ? data.entries : [];
+    renderLeaderboard(entries);
+    setLeaderboardStatus(entries.length ? "" : "leaderboardEmpty");
+  } catch (error) {
+    if (requestId === leaderboardRequestId) setLeaderboardStatus("leaderboardError");
+    console.error("Leaderboard load failed", error);
+  }
+}
+
+function openLeaderboard(fromResult = false) {
+  const mode = fromResult ? state.lastCompletedResult : null;
+  leaderboardDuration.value = String(mode ? mode.duration : clamp(Number(durationInput.value) || 30, 10, 1800));
+  leaderboardDifficulty.value = mode ? mode.difficulty : state.difficulty;
+  if (!leaderboardDialog.open) leaderboardDialog.showModal();
+  loadLeaderboard();
 }
 
 function beginSession() {
@@ -1295,6 +1437,8 @@ async function startSession() {
     return;
   }
 
+  state.lastCompletedResult = null;
+  setScoreStatus("");
   prewarmAudio();
 
   state.preparing = true;
@@ -1318,6 +1462,41 @@ async function startSession() {
     beginSession();
   });
 }
+
+leaderboardOpenButton.addEventListener("click", () => openLeaderboard());
+resultLeaderboardButton.addEventListener("click", () => openLeaderboard(true));
+leaderboardCloseButton.addEventListener("click", () => leaderboardDialog.close());
+leaderboardDuration.addEventListener("change", loadLeaderboard);
+leaderboardDifficulty.addEventListener("change", loadLeaderboard);
+
+scoreSubmitForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!state.lastCompletedResult || saveScoreButton.disabled) return;
+  saveScoreButton.disabled = true;
+  setScoreStatus("savingScore");
+  try {
+    const response = await fetch("/api/leaderboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...state.lastCompletedResult,
+        nickname: playerName.value.trim(),
+      }),
+    });
+    if (!response.ok) throw new Error("Score submission failed");
+    const data = await response.json();
+    if (data.saved) {
+      setScoreStatus("saveSuccess", data.rank);
+    } else {
+      saveScoreButton.disabled = false;
+      setScoreStatus(data.reason === "not_best" ? "saveNotBest" : "saveNotTopTen");
+    }
+  } catch (error) {
+    saveScoreButton.disabled = false;
+    setScoreStatus("saveError");
+    console.error("Score submission failed", error);
+  }
+});
 
 settingsForm.addEventListener("submit", (event) => {
   event.preventDefault();

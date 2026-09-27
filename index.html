@@ -22,6 +22,8 @@
         <span class="github-link__text">talgat-sec</span>
       </a>
 
+      <button id="leaderboard-open-button" class="leaderboard-open" type="button" aria-label="Leaderboard">🏆 <span id="leaderboard-open-label">Leaderboard</span></button>
+
       <div class="lang-switch" role="group" aria-label="Language switcher">
         <button id="lang-en" class="lang-switch__btn is-active" type="button">EN</button>
         <button id="lang-ru" class="lang-switch__btn" type="button">RU</button>
@@ -134,11 +136,43 @@
                 </div>
               </div>
             </div>
-            <button id="restart-button" class="action-btn" type="button">Start Session</button>
+            <form id="score-submit-form" class="score-submit hidden">
+              <label for="player-name" id="player-name-label">Nickname</label>
+              <div class="score-submit__row">
+                <input id="player-name" name="nickname" type="text" minlength="2" maxlength="20" autocomplete="nickname" required placeholder="Your nickname">
+                <button id="save-score-button" class="action-btn" type="submit">Save score</button>
+              </div>
+            </form>
+            <p id="score-submit-status" class="score-submit__status" role="status"></p>
+            <div class="overlay-actions">
+              <button id="result-leaderboard-button" class="secondary-btn" type="button">Leaderboard</button>
+              <button id="restart-button" class="action-btn" type="button">Start Session</button>
+            </div>
           </div>
         </div>
       </section>
     </main>
+
+    <dialog id="leaderboard-dialog" class="leaderboard-dialog" aria-labelledby="leaderboard-title">
+      <div class="leaderboard-dialog__header">
+        <h2 id="leaderboard-title">Leaderboard</h2>
+        <button id="leaderboard-close-button" class="leaderboard-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="leaderboard-filters">
+        <label for="leaderboard-duration"><span id="leaderboard-duration-label">Duration (sec)</span>
+          <input id="leaderboard-duration" type="number" min="10" max="1800" step="10" value="120">
+        </label>
+        <label for="leaderboard-difficulty"><span id="leaderboard-difficulty-label">Difficulty</span>
+          <select id="leaderboard-difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+      </div>
+      <p id="leaderboard-status" role="status"></p>
+      <ol id="leaderboard-list" class="leaderboard-list"></ol>
+    </dialog>
   </div>
 
   <script src="app.js"></script>
