@@ -58,7 +58,11 @@ export default async function leaderboard(request) {
     );
     if (!mode) return json({ error: "Invalid mode" }, 400);
 
-    const store = getStore({ name: STORE_NAME, consistency: "strong" });
+    const isPreview = url.hostname.endsWith("--aim-training-online.netlify.app");
+    const store = getStore({
+      name: isPreview ? STORE_NAME + "-preview" : STORE_NAME,
+      consistency: "strong",
+    });
     if (request.method === "GET") {
       const rows = (await store.get(mode.key, { type: "json" })) || [];
       return json({ entries: publicEntries(Array.isArray(rows) ? rows : []) });
