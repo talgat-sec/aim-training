@@ -46,7 +46,7 @@
             <label class="field">
               <span id="duration-label">Duration</span>
               <div class="field__inline">
-                <input id="duration-input" name="duration" type="number" min="10" max="1800" step="10" value="120">
+                <input id="duration-input" name="duration" type="number" min="10" max="1800" step="10" value="90">
                 <span class="field__suffix" id="duration-suffix">sec</span>
               </div>
             </label>
@@ -54,8 +54,8 @@
             <div class="preset-row" id="duration-presets" role="group" aria-label="Quick time presets">
               <button class="preset-btn" type="button" data-duration="30" id="preset-30">30 sec</button>
               <button class="preset-btn" type="button" data-duration="60" id="preset-60">1 min</button>
-              <button class="preset-btn" type="button" data-duration="90" id="preset-90">1.5 min</button>
-              <button class="preset-btn is-active" type="button" data-duration="120" id="preset-120">2 min</button>
+              <button class="preset-btn is-active" type="button" data-duration="90" id="preset-90">1.5 min</button>
+              <button class="preset-btn" type="button" data-duration="120" id="preset-120">2 min</button>
               <button class="preset-btn" type="button" data-duration="150" id="preset-150">2.5 min</button>
               <button class="preset-btn" type="button" data-duration="180" id="preset-180">3 min</button>
               <button class="preset-btn" type="button" data-duration="240" id="preset-240">4 min</button>
@@ -87,7 +87,7 @@
             <h2 id="intro-title">Click Warmup Before the Match.</h2>
             <p class="overlay-card__note" id="intro-note">Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2, and League of Legends.</p>
             <div class="overlay-actions">
-              <button id="overlay-start-button" class="action-btn" type="button">Start Session</button>
+              <button id="overlay-start-button" class="action-btn" type="button">Start New Game</button>
             </div>
           </div>
 
@@ -116,7 +116,22 @@
                 <dd id="result-difficulty">Medium</dd>
               </div>
             </dl>
-            <div class="score-legend">
+            <form id="score-submit-form" class="score-submit hidden">
+              <label for="player-name" id="player-name-label">Enter your nickname to join the leaderboard</label>
+              <div class="score-submit__row">
+                <input id="player-name" name="nickname" type="text" minlength="2" maxlength="20" autocomplete="nickname" required placeholder="Your nickname">
+                <button id="save-score-button" class="action-btn" type="submit">Save score</button>
+              </div>
+            </form>
+            <p id="score-submit-status" class="score-submit__status" role="status"></p>
+            <section id="result-board" class="result-board hidden" aria-labelledby="result-board-title">
+              <div class="result-board__header">
+                <p class="result-board__title" id="result-board-title">Top 10</p>
+                <span class="result-board__mode" id="result-board-mode"></span>
+              </div>
+              <ol id="result-board-list" class="leaderboard-list leaderboard-list--compact"></ol>
+            </section>
+            <div class="score-legend" id="score-legend">
               <p class="score-legend__title" id="score-legend-title">How Points Work</p>
               <div class="score-legend__grid">
                 <div class="score-legend__group">
@@ -136,17 +151,9 @@
                 </div>
               </div>
             </div>
-            <form id="score-submit-form" class="score-submit hidden">
-              <label for="player-name" id="player-name-label">Nickname</label>
-              <div class="score-submit__row">
-                <input id="player-name" name="nickname" type="text" minlength="2" maxlength="20" autocomplete="nickname" required placeholder="Your nickname">
-                <button id="save-score-button" class="action-btn" type="submit">Save score</button>
-              </div>
-            </form>
-            <p id="score-submit-status" class="score-submit__status" role="status"></p>
             <div class="overlay-actions">
               <button id="result-leaderboard-button" class="secondary-btn" type="button">Leaderboard</button>
-              <button id="restart-button" class="action-btn" type="button">Start Session</button>
+              <button id="restart-button" class="action-btn" type="button">Start New Game</button>
             </div>
           </div>
         </div>
@@ -159,8 +166,8 @@
         <button id="leaderboard-close-button" class="leaderboard-close" type="button" aria-label="Close">×</button>
       </div>
       <div class="leaderboard-filters">
-        <label for="leaderboard-duration"><span id="leaderboard-duration-label">Duration (sec)</span>
-          <input id="leaderboard-duration" type="number" min="10" max="1800" step="10" value="120">
+        <label for="leaderboard-duration"><span id="leaderboard-duration-label">Duration</span>
+          <select id="leaderboard-duration"></select>
         </label>
         <label for="leaderboard-difficulty"><span id="leaderboard-difficulty-label">Difficulty</span>
           <select id="leaderboard-difficulty">

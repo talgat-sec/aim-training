@@ -40,6 +40,12 @@ const scoreSubmitForm = document.getElementById("score-submit-form");
 const scoreSubmitStatus = document.getElementById("score-submit-status");
 const saveScoreButton = document.getElementById("save-score-button");
 const playerName = document.getElementById("player-name");
+const scoreLegend = document.getElementById("score-legend");
+const resultBoard = document.getElementById("result-board");
+const resultBoardMode = document.getElementById("result-board-mode");
+const resultBoardList = document.getElementById("result-board-list");
+const LEADERBOARD_DURATIONS = presetButtons.map((button) => Number(button.dataset.duration));
+const NICKNAME_STORAGE_KEY = "click-training-nickname";
 let scoreStatusKey = "";
 let scoreStatusRank = 0;
 let leaderboardStatusKey = "";
@@ -77,6 +83,7 @@ const uiText = {
   playerNameLabel: document.getElementById("player-name-label"),
   saveScoreButton,
   resultLeaderboardButton,
+  resultBoardTitle: document.getElementById("result-board-title"),
   scoreLegendTitle: document.getElementById("score-legend-title"),
   scoreLegendNormal: document.getElementById("score-legend-normal"),
   scoreLegendArmored: document.getElementById("score-legend-armored"),
@@ -93,6 +100,7 @@ const translations = {
     settingsTitle: "Training Settings",
     durationLabel: "Duration",
     durationSuffix: "sec",
+    minuteSuffix: "min",
     preset30: "30 sec",
     preset60: "1 min",
     preset90: "1.5 min",
@@ -113,7 +121,7 @@ const translations = {
     introTitle: "Click Warmup Before the Match.",
     introNote:
       "Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2, and League of Legends.",
-    startSession: "Start Session",
+    startSession: "Start New Game",
     stop: "Stop",
     resultEyebrow: "Session Complete",
     resultTitle: "Training Results",
@@ -122,12 +130,13 @@ const translations = {
     resultDifficultyLabel: "Difficulty",
     leaderboardOpenLabel: "Leaderboard",
     leaderboardTitle: "Top 10 Players",
-    leaderboardDurationLabel: "Duration (sec)",
+    leaderboardDurationLabel: "Duration",
     leaderboardDifficultyLabel: "Difficulty",
-    playerNameLabel: "Nickname",
+    playerNameLabel: "Enter your nickname to join the leaderboard",
     nicknamePlaceholder: "Your nickname",
     saveScoreButton: "Save score",
     resultLeaderboardButton: "View leaderboard",
+    resultBoardTitle: "Top 10",
     leaderboardLoading: "Loading leaderboard…",
     leaderboardEmpty: "No scores for this mode yet.",
     leaderboardError: "Could not load leaderboard.",
@@ -156,6 +165,7 @@ const translations = {
     settingsTitle: "Настройки тренировки",
     durationLabel: "Длительность",
     durationSuffix: "сек",
+    minuteSuffix: "мин",
     preset30: "30 сек",
     preset60: "1 мин",
     preset90: "1.5 мин",
@@ -176,7 +186,7 @@ const translations = {
     introTitle: "Разминка на клики перед игрой.",
     introNote:
       "Подходит для разминки (раскликаться) перед: VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2 и League of Legends.",
-    startSession: "Начать сессию",
+    startSession: "Начать новую игру",
     stop: "Стоп",
     resultEyebrow: "Сессия завершена",
     resultTitle: "Результат тренировки",
@@ -185,12 +195,13 @@ const translations = {
     resultDifficultyLabel: "Сложность",
     leaderboardOpenLabel: "Рейтинг",
     leaderboardTitle: "Топ-10 игроков",
-    leaderboardDurationLabel: "Длительность (сек)",
+    leaderboardDurationLabel: "Длительность",
     leaderboardDifficultyLabel: "Сложность",
-    playerNameLabel: "Ник",
+    playerNameLabel: "Введите ник, чтобы попасть в рейтинг",
     nicknamePlaceholder: "Ваш ник",
     saveScoreButton: "Сохранить результат",
     resultLeaderboardButton: "Посмотреть рейтинг",
+    resultBoardTitle: "Топ-10",
     leaderboardLoading: "Загрузка рейтинга…",
     leaderboardEmpty: "В этом режиме пока нет результатов.",
     leaderboardError: "Не удалось загрузить рейтинг.",
@@ -224,6 +235,10 @@ const ARMORED_HOLD_MS = 4000;
 const FLYING_SPAWN_INTERVAL_MS = 9000;
 const FLYING_SPEED_PX_S = 260;
 const FLYING_SIZE = 66;
+const SFX_MASTER_GAIN = 2.24;
+// Effects volume after the compressor (1 = original loudness). The compressor
+// flattens any change made before it, so shot loudness is tuned here.
+const SFX_OUTPUT_VOLUME = 0.7;
 
 const DIFFICULTY_PRESETS = {
   easy:   { spawn: 900,  hold: 1500, concurrent: 1, flyingLifetime: 4000 },
@@ -236,7 +251,7 @@ const state = {
   difficulty: "medium",
   muted: false,
   running: false,
-  totalSeconds: 120,
+  totalSeconds: 90,
   spawnInterval: 500,
   holdDuration: 1000,
   maxTargets: 1,
@@ -248,9 +263,10 @@ const state = {
   missedArmored: 0,
   missedFlying: 0,
   startTime: 0,
-  remainingMs: 120000,
+  remainingMs: 90000,
   elapsedMs: 0,
   lastCompletedResult: null,
+  resultBoardEntries: null,
   countdownTimerId: null,
   spawnTimerId: null,
   armoredSpawnTimerId: null,
@@ -262,6 +278,7 @@ const state = {
   audioContext: null,
   audioMasterGain: null,
   audioCompressor: null,
+  audioOutputGain: null,
   noiseBuffer: null,
   audioKeepAliveId: null,
 };
@@ -301,6 +318,35 @@ function getScore() {
   );
 }
 
+
+function getDifficultyLabel(difficulty) {
+  return translations[state.language]["diff" + difficulty.charAt(0).toUpperCase() + difficulty.slice(1)];
+}
+
+function formatDurationLabel(seconds) {
+  const copy = translations[state.language];
+  return seconds >= 60 && seconds % 30 === 0
+    ? `${seconds / 60} ${copy.minuteSuffix}`
+    : `${seconds} ${copy.durationSuffix}`;
+}
+
+function normalizeNickname(value) {
+  return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function readSavedNickname() {
+  try {
+    return localStorage.getItem(NICKNAME_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function storeNickname(nickname) {
+  try {
+    localStorage.setItem(NICKNAME_STORAGE_KEY, nickname);
+  } catch {}
+}
 
 function updateLanguageButtons() {
   langEnButton.classList.toggle("is-active", state.language === "en");
@@ -349,6 +395,10 @@ function applyLanguage() {
   playerName.placeholder = copy.nicknamePlaceholder;
   for (const option of leaderboardDifficulty.options) {
     option.textContent = copy["diff" + option.value.charAt(0).toUpperCase() + option.value.slice(1)];
+  }
+  setLeaderboardDurationOptions(Number(leaderboardDuration.value) || state.totalSeconds);
+  if (state.resultBoardEntries) {
+    showResultBoard(state.resultBoardEntries);
   }
   setScoreStatus(scoreStatusKey, scoreStatusRank);
   setLeaderboardStatus(leaderboardStatusKey);
@@ -430,8 +480,10 @@ function getAudioContext() {
     state.audioContext = new AudioCtor();
     state.audioMasterGain = state.audioContext.createGain();
     state.audioCompressor = state.audioContext.createDynamicsCompressor();
+    state.audioOutputGain = state.audioContext.createGain();
 
-    state.audioMasterGain.gain.value = 2.24;
+    state.audioMasterGain.gain.value = state.muted ? 0 : SFX_MASTER_GAIN;
+    state.audioOutputGain.gain.value = SFX_OUTPUT_VOLUME;
     state.audioCompressor.threshold.value = -24;
     state.audioCompressor.knee.value = 12;
     state.audioCompressor.ratio.value = 14;
@@ -439,7 +491,8 @@ function getAudioContext() {
     state.audioCompressor.release.value = 0.05;
 
     state.audioMasterGain.connect(state.audioCompressor);
-    state.audioCompressor.connect(state.audioContext.destination);
+    state.audioCompressor.connect(state.audioOutputGain);
+    state.audioOutputGain.connect(state.audioContext.destination);
   }
 
   if (state.audioContext.state === "suspended") {
@@ -1267,6 +1320,10 @@ async function finishSession() {
   } : null;
   scoreSubmitForm.classList.toggle("hidden", !completed);
   saveScoreButton.disabled = false;
+  if (completed && !playerName.value) {
+    playerName.value = readSavedNickname();
+  }
+  hideResultBoard();
   setScoreStatus(completed ? "" : "completeRound");
 
   renderTimeLeft();
@@ -1283,6 +1340,11 @@ async function finishSession() {
 
   resultOverlay.classList.remove("hidden");
   introOverlay.classList.add("hidden");
+
+  if (completed) {
+    playerName.focus({ preventScroll: true });
+    playerName.select();
+  }
 }
 
 function setScoreStatus(key, rank = 0) {
@@ -1290,6 +1352,7 @@ function setScoreStatus(key, rank = 0) {
   scoreStatusRank = rank;
   const message = key ? translations[state.language][key] || "" : "";
   scoreSubmitStatus.textContent = message.replace("{rank}", String(rank));
+  scoreSubmitStatus.classList.toggle("is-success", key === "saveSuccess");
 }
 
 function setLeaderboardStatus(key) {
@@ -1297,10 +1360,12 @@ function setLeaderboardStatus(key) {
   leaderboardStatus.textContent = key ? translations[state.language][key] || "" : "";
 }
 
-function renderLeaderboard(entries) {
-  leaderboardList.replaceChildren();
+function renderLeaderboard(list, entries, highlightNickname = "") {
+  const highlight = highlightNickname ? normalizeNickname(highlightNickname) : "";
+  list.replaceChildren();
   for (const entry of entries) {
     const item = document.createElement("li");
+    item.classList.toggle("is-current", Boolean(highlight) && normalizeNickname(entry.nickname) === highlight);
     const row = document.createElement("div");
     const name = document.createElement("span");
     const score = document.createElement("span");
@@ -1311,8 +1376,38 @@ function renderLeaderboard(entries) {
     score.textContent = String(entry.score);
     row.append(name, score);
     item.append(row);
-    leaderboardList.append(item);
+    list.append(item);
   }
+}
+
+function showResultBoard(entries) {
+  const mode = state.lastCompletedResult;
+  if (!mode) return;
+  state.resultBoardEntries = entries;
+  resultBoardMode.textContent = `${formatDurationLabel(mode.duration)} · ${getDifficultyLabel(mode.difficulty)}`;
+  renderLeaderboard(resultBoardList, entries, readSavedNickname());
+  resultBoard.classList.remove("hidden");
+  scoreLegend.classList.add("hidden");
+}
+
+function hideResultBoard() {
+  state.resultBoardEntries = null;
+  resultBoardList.replaceChildren();
+  resultBoard.classList.add("hidden");
+  scoreLegend.classList.remove("hidden");
+}
+
+function setLeaderboardDurationOptions(selected) {
+  const durations = LEADERBOARD_DURATIONS.includes(selected)
+    ? LEADERBOARD_DURATIONS
+    : LEADERBOARD_DURATIONS.concat(selected).sort((a, b) => a - b);
+  leaderboardDuration.replaceChildren(...durations.map((duration) => {
+    const option = document.createElement("option");
+    option.value = String(duration);
+    option.textContent = formatDurationLabel(duration);
+    return option;
+  }));
+  leaderboardDuration.value = String(selected);
 }
 
 async function loadLeaderboard() {
@@ -1332,7 +1427,7 @@ async function loadLeaderboard() {
     const data = await response.json();
     if (requestId !== leaderboardRequestId) return;
     const entries = Array.isArray(data.entries) ? data.entries : [];
-    renderLeaderboard(entries);
+    renderLeaderboard(leaderboardList, entries, readSavedNickname());
     setLeaderboardStatus(entries.length ? "" : "leaderboardEmpty");
   } catch (error) {
     if (requestId === leaderboardRequestId) setLeaderboardStatus("leaderboardError");
@@ -1342,7 +1437,7 @@ async function loadLeaderboard() {
 
 function openLeaderboard(fromResult = false) {
   const mode = fromResult ? state.lastCompletedResult : null;
-  leaderboardDuration.value = String(mode ? mode.duration : clamp(Number(durationInput.value) || 30, 10, 1800));
+  setLeaderboardDurationOptions(mode ? mode.duration : clamp(Number(durationInput.value) || 30, 10, 1800));
   leaderboardDifficulty.value = mode ? mode.difficulty : state.difficulty;
   if (!leaderboardDialog.open) leaderboardDialog.showModal();
   loadLeaderboard();
@@ -1474,18 +1569,24 @@ scoreSubmitForm.addEventListener("submit", async (event) => {
   if (!state.lastCompletedResult || saveScoreButton.disabled) return;
   saveScoreButton.disabled = true;
   setScoreStatus("savingScore");
+  const nickname = playerName.value.trim();
   try {
     const response = await fetch("/api/leaderboard", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...state.lastCompletedResult,
-        nickname: playerName.value.trim(),
+        nickname,
       }),
     });
     if (!response.ok) throw new Error("Score submission failed");
     const data = await response.json();
+    storeNickname(nickname);
+    if (Array.isArray(data.entries)) {
+      showResultBoard(data.entries);
+    }
     if (data.saved) {
+      scoreSubmitForm.classList.add("hidden");
       setScoreStatus("saveSuccess", data.rank);
     } else {
       saveScoreButton.disabled = false;
@@ -1523,7 +1624,7 @@ function setMute(muted) {
   state.muted = muted;
   bgTracks.forEach(t => { t.muted = muted; });
   if (state.audioMasterGain) {
-    state.audioMasterGain.gain.value = muted ? 0 : 2.8;
+    state.audioMasterGain.gain.value = muted ? 0 : SFX_MASTER_GAIN;
   }
   muteBtn.classList.toggle("is-muted", muted);
 }
@@ -1600,6 +1701,7 @@ document.addEventListener("fullscreenchange", () => {
 });
 
 resetStats();
+setLeaderboardDurationOptions(state.totalSeconds);
 applyLanguage();
 updatePresetButtons(Number(durationInput.value));
 syncPreviewTime();
