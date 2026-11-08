@@ -1,5 +1,7 @@
 const arenaSection = document.querySelector(".arena-section");
 const arena = document.getElementById("arena");
+const arenaFrame = document.querySelector(".arena-frame");
+const arenaStage = document.getElementById("arena-stage");
 const arenaHud = document.getElementById("arena-hud");
 const hudTimeStat = document.getElementById("hud-time-stat");
 const hudTime = document.getElementById("hud-time");
@@ -232,6 +234,11 @@ const translations = {
 
 const GROW_DURATION_MS = 1350;
 const SHRINK_DURATION_MS = 1350;
+// The game is played on a fixed 1920x1080 logical field (the most common monitor size),
+// scaled to fit the arena. Browser zoom and window size only change that scale, so
+// targets always cover the same share of the screen and zooming in gives no advantage.
+const STAGE_WIDTH = 1920;
+const STAGE_HEIGHT = 1080;
 const HIT_REACTION_MS = 220;
 const MISS_MARKER_MS = 100;
 const SESSION_COUNTDOWN_STEPS = [3, 2, 1];
@@ -284,6 +291,7 @@ const state = {
   preparing: false,
   activeTargets: new Map(),
   nextTargetId: 1,
+  stageScale: 1,
   audioContext: null,
   audioMasterGain: null,
   audioCompressor: null,
@@ -781,24 +789,47 @@ function createArenaEffect(className, x, y, duration) {
   effect.className = className;
   effect.style.left = `${x}px`;
   effect.style.top = `${y}px`;
-  arena.appendChild(effect);
+  arenaStage.appendChild(effect);
 
   window.setTimeout(() => {
     effect.remove();
   }, duration);
 }
 
-function getArenaCoordinates(clientX, clientY) {
-  const rect = arena.getBoundingClientRect();
+// Fit the logical field into the arena, centred, keeping its 16:9 shape.
+function fitStage() {
+  const width = arena.clientWidth;
+  const height = arena.clientHeight;
+  if (!width || !height) {
+    return;
+  }
+
+  const scale = Math.min(width / STAGE_WIDTH, height / STAGE_HEIGHT);
+  const offsetX = (width - STAGE_WIDTH * scale) / 2;
+  const offsetY = (height - STAGE_HEIGHT * scale) / 2;
+
+  state.stageScale = scale;
+  arenaStage.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+  // The background grid follows the same scale so the whole picture zooms as one.
+  arenaFrame.style.setProperty("--stage-scale", String(scale));
+  arenaFrame.style.setProperty("--stage-x", `${offsetX}px`);
+  arenaFrame.style.setProperty("--stage-y", `${offsetY}px`);
+  // Grid lines scale with the field but never get thinner than one real screen pixel.
+  arenaFrame.style.setProperty("--grid-line", `${Math.max(scale, 1 / (window.devicePixelRatio || 1))}px`);
+}
+
+// Screen point -> logical field point.
+function getStageCoordinates(clientX, clientY) {
+  const rect = arenaStage.getBoundingClientRect();
 
   return {
-    x: clientX - rect.left,
-    y: clientY - rect.top,
+    x: (clientX - rect.left) / state.stageScale,
+    y: (clientY - rect.top) / state.stageScale,
   };
 }
 
 function createMissMarker(clientX, clientY) {
-  const { x, y } = getArenaCoordinates(clientX, clientY);
+  const { x, y } = getStageCoordinates(clientX, clientY);
   createArenaEffect("miss-marker", x, y, MISS_MARKER_MS);
 }
 
@@ -925,12 +956,11 @@ function getRandomTargetSize() {
 }
 
 function getRandomPosition(size) {
-  const rect = arena.getBoundingClientRect();
   const padding = 16;
   const minX = size / 2 + padding;
   const minY = size / 2 + padding;
-  const maxX = Math.max(minX, rect.width - size / 2 - padding);
-  const maxY = Math.max(minY, rect.height - size / 2 - padding);
+  const maxX = Math.max(minX, STAGE_WIDTH - size / 2 - padding);
+  const maxY = Math.max(minY, STAGE_HEIGHT - size / 2 - padding);
 
   return {
     x: minX + Math.random() * (maxX - minX),
@@ -979,7 +1009,7 @@ function createTarget() {
     removeTarget(targetId, "hit");
   });
 
-  arena.appendChild(target);
+  arenaStage.appendChild(target);
 
   const timerIds = [
     window.setTimeout(() => {
@@ -1075,7 +1105,7 @@ function createArmoredTarget() {
     }
   });
 
-  arena.appendChild(target);
+  arenaStage.appendChild(target);
 
   const timerIds = [
     window.setTimeout(() => {
@@ -1112,10 +1142,9 @@ function createFlyingTarget() {
 
   const flyingLifetime = DIFFICULTY_PRESETS[state.difficulty].flyingLifetime;
 
-  const rect = arena.getBoundingClientRect();
   const padding = 40;
-  const startX = padding + Math.random() * Math.max(1, rect.width - padding * 2);
-  const startY = padding + Math.random() * Math.max(1, rect.height - padding * 2);
+  const startX = padding + Math.random() * (STAGE_WIDTH - padding * 2);
+  const startY = padding + Math.random() * (STAGE_HEIGHT - padding * 2);
 
   const initialAngle = Math.random() * Math.PI * 2;
 
@@ -1148,7 +1177,7 @@ function createFlyingTarget() {
     removeTarget(targetId, "flying-kill");
   });
 
-  arena.appendChild(target);
+  arenaStage.appendChild(target);
 
   const record = {
     element: target,
@@ -1196,9 +1225,9 @@ function createFlyingTarget() {
       record.x += Math.cos(record.angle) * speedPxMs * dt;
       record.y += Math.sin(record.angle) * speedPxMs * dt;
 
-      // Reflect off arena walls so jet stays visible the whole lifetime
-      const arenaW = arena.clientWidth;
-      const arenaH = arena.clientHeight;
+      // Reflect off the field walls so the jet stays visible the whole lifetime
+      const arenaW = STAGE_WIDTH;
+      const arenaH = STAGE_HEIGHT;
       const wall = FLYING_SIZE / 2 + 4;
 
       if (record.x < wall) {
@@ -1726,7 +1755,7 @@ arena.addEventListener(
 );
 
 arena.addEventListener("pointerdown", (event) => {
-  if (!state.running || event.button !== 0 || event.target !== arena) {
+  if (!state.running || event.button !== 0 || (event.target !== arena && event.target !== arenaStage)) {
     return;
   }
 
@@ -1748,14 +1777,13 @@ durationInput.addEventListener("input", () => {
   syncPreviewTime();
 });
 
-window.addEventListener("resize", () => {
-  if (!state.running) {
-    return;
-  }
-
-  clearArenaTargets();
-  spawnTick();
-});
+// Browser zoom, fullscreen and window resizing all change the arena size; targets stay put,
+// only the scale of the field is updated.
+if ("ResizeObserver" in window) {
+  new ResizeObserver(fitStage).observe(arena);
+} else {
+  window.addEventListener("resize", fitStage);
+}
 
 document.addEventListener("fullscreenchange", () => {
   if (document.fullscreenElement === arenaSection) {
@@ -1769,6 +1797,7 @@ document.addEventListener("fullscreenchange", () => {
   }
 });
 
+fitStage();
 resetStats();
 setLeaderboardDurationOptions(state.totalSeconds);
 applyLanguage();
