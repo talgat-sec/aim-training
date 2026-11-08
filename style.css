@@ -363,6 +363,26 @@ input {
   flex-direction: column;
 }
 
+/* During a round the arena fills the whole browser window even if real fullscreen was
+   refused, so the field is never squeezed next to the settings panel. */
+.arena-section.is-playing {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #020f19;
+}
+
+.arena-section.is-playing .arena-frame {
+  flex: 1;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.arena-section.is-playing .arena {
+  height: 100%;
+}
+
 .arena-frame {
   position: relative;
   flex: 1;

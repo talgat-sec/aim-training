@@ -1357,6 +1357,7 @@ async function finishSession() {
     updateHudVisibility();
     syncPreviewTime();
     exitArenaFullscreen();
+    arenaSection.classList.remove("is-playing");
     return;
   }
 
@@ -1410,6 +1411,7 @@ async function finishSession() {
   }
 
   await exitArenaFullscreen();
+  arenaSection.classList.remove("is-playing");
 
   resultOverlay.classList.remove("hidden");
   introOverlay.classList.add("hidden");
@@ -1622,6 +1624,9 @@ async function startSession() {
   hideCountdownOverlay();
   resetStats();
 
+  // The round always takes the whole browser window; real fullscreen comes on top when the
+  // browser allows it. Without this, a refused fullscreen squeezed the field into the side panel.
+  arenaSection.classList.add("is-playing");
   await enterArenaFullscreen();
   if (!state.preparing) {
     // The player pressed Esc while the browser was switching to fullscreen.
