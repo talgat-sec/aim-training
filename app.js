@@ -250,9 +250,9 @@ const SFX_MASTER_GAIN = 2.24;
 const SFX_OUTPUT_VOLUME = 0.7;
 
 const DIFFICULTY_PRESETS = {
-  easy:   { spawn: 900,  hold: 1500, concurrent: 1, flyingLifetime: 4000 },
-  medium: { spawn: 500,  hold: 1000, concurrent: 1, flyingLifetime: 2500 },
-  hard:   { spawn: 300,  hold: 800,  concurrent: 1, flyingLifetime: 1200 },
+  easy:   { spawn: 900,  hold: 1500, concurrent: 1, flyingLifetime: 6000 },
+  medium: { spawn: 500,  hold: 1000, concurrent: 1, flyingLifetime: 3750 },
+  hard:   { spawn: 300,  hold: 800,  concurrent: 1, flyingLifetime: 1800 },
 };
 
 const state = {
