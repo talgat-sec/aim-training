@@ -271,8 +271,7 @@ input {
 
 .preset-btn,
 .action-btn,
-.secondary-btn,
-.tool-btn {
+.secondary-btn {
   border: 0;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
@@ -342,8 +341,7 @@ input {
   box-shadow: 0 18px 40px var(--accent-shadow);
 }
 
-.secondary-btn,
-.tool-btn {
+.secondary-btn {
   padding: 10px 14px;
   color: var(--text);
   letter-spacing: 0.08em;
@@ -356,23 +354,6 @@ input {
 
 .secondary-btn {
   box-shadow: inset 0 0 0 1px rgba(123, 171, 196, 0.12);
-}
-
-.tool-btn {
-  min-width: 112px;
-  font-size: 0.7rem;
-}
-
-.tool-btn--danger {
-  background: rgba(255, 98, 48, 0.14);
-  border-color: rgba(255, 98, 48, 0.32);
-}
-
-.tool-btn:disabled {
-  opacity: 0.44;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
 .arena-section {
@@ -410,15 +391,100 @@ input {
   isolation: isolate;
 }
 
-.arena-tools {
+/* ── In-game HUD ─────────────────────────────────────────────
+   Placed before #arena in the DOM, so targets are painted on top of it.
+   pointer-events: none lets every click fall through to the targets. */
+.arena-hud {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  inset: 0;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: end;
-  gap: 6px;
-  z-index: 4;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.arena-hud.hidden {
+  display: none;
+}
+
+.arena-hud__stats {
+  display: flex;
+  gap: 26px;
+}
+
+.arena-hud__stat {
+  display: grid;
+  gap: 4px;
+  opacity: 0.6;
+  transition: opacity 200ms ease;
+}
+
+.arena-hud__label {
+  color: var(--muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.arena-hud__value {
+  color: var(--text);
+  font-family: "Consolas", "Lucida Console", monospace;
+  font-size: clamp(1.45rem, 2.3vw, 2.1rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+  transition: color 200ms ease;
+}
+
+.arena-hud__value.is-negative {
+  color: #ff6b6b;
+}
+
+/* Last seconds of the round: brighter, red and softly pulsing */
+.arena-hud__stat--time.is-low {
+  opacity: 0.95;
+}
+
+.arena-hud__stat--time.is-low .arena-hud__value {
+  color: var(--accent);
+  text-shadow: 0 0 18px rgba(255, 98, 48, 0.55);
+  animation: hud-low-pulse 1s ease-in-out infinite;
+}
+
+@keyframes hud-low-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+
+/* Keyboard hint, not a button: nothing to misclick while aiming */
+.arena-hud__exit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid rgba(238, 246, 251, 0.16);
+  border-radius: 999px;
+  background: rgba(2, 18, 28, 0.22);
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.arena-hud__exit kbd {
+  padding: 3px 7px;
+  border: 1px solid rgba(238, 246, 251, 0.34);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .overlay-card {
@@ -789,9 +855,8 @@ input {
   min-height: 0;
 }
 
-.arena-section:fullscreen .arena-tools {
-  top: 24px;
-  right: 24px;
+.arena-section:fullscreen .arena-hud {
+  padding: 26px 32px;
 }
 
 @media (max-width: 780px) {
@@ -876,8 +941,14 @@ input {
     min-height: 58vh;
   }
 
-  /* Hide stop button on mobile */
-  .arena-tools {
+  .arena-hud {
+    padding: 14px 16px;
+  }
+}
+
+/* No Esc key on phones and tablets */
+@media (max-width: 780px), (hover: none) and (pointer: coarse) {
+  .arena-hud__exit {
     display: none;
   }
 }
@@ -1103,15 +1174,6 @@ input {
 }
 
 @media (max-width: 760px) {
-  .hud {
-    width: 100%;
-    justify-content: start;
-  }
-
-  .hud__item {
-    min-width: calc(50% - 8px);
-  }
-
   .overlay-card {
     padding: 16px;
   }
