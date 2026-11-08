@@ -77,10 +77,21 @@
       <section class="arena-section">
         <div class="arena-frame">
           <div class="arena-grid" aria-hidden="true"></div>
-          <div class="arena" id="arena" tabindex="0" aria-label="Game field"></div>
-          <div class="arena-tools" id="arena-tools" aria-label="Game controls">
-            <button id="stop-button" class="tool-btn tool-btn--danger" type="button" disabled>Stop</button>
+          <!-- In-game HUD: sits under the targets and ignores the mouse, so it never blocks a shot -->
+          <div class="arena-hud hidden" id="arena-hud" aria-hidden="true">
+            <div class="arena-hud__stats">
+              <div class="arena-hud__stat arena-hud__stat--time" id="hud-time-stat">
+                <span class="arena-hud__label" id="hud-time-label">Time</span>
+                <span class="arena-hud__value" id="hud-time">01:30</span>
+              </div>
+              <div class="arena-hud__stat arena-hud__stat--score">
+                <span class="arena-hud__label" id="hud-score-label">Score</span>
+                <span class="arena-hud__value arena-hud__value--score" id="hud-score">0</span>
+              </div>
+            </div>
+            <div class="arena-hud__exit"><kbd>Esc</kbd><span id="hud-exit-label">Exit</span></div>
           </div>
+          <div class="arena" id="arena" tabindex="0" aria-label="Game field"></div>
 
           <div class="overlay-card overlay-card--intro" id="intro-overlay">
             <p class="overlay-card__eyebrow" id="intro-eyebrow">Ready Check</p>

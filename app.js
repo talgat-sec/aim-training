@@ -1,6 +1,9 @@
 const arenaSection = document.querySelector(".arena-section");
 const arena = document.getElementById("arena");
-const arenaTools = document.getElementById("arena-tools");
+const arenaHud = document.getElementById("arena-hud");
+const hudTimeStat = document.getElementById("hud-time-stat");
+const hudTime = document.getElementById("hud-time");
+const hudScore = document.getElementById("hud-score");
 const settingsForm = document.getElementById("settings-form");
 const durationInput = document.getElementById("duration-input");
 const durationPresets = document.getElementById("duration-presets");
@@ -11,7 +14,6 @@ const resultOverlay = document.getElementById("result-overlay");
 const countdownOverlay = document.getElementById("countdown-overlay");
 const countdownValue = document.getElementById("countdown-value");
 const restartButton = document.getElementById("restart-button");
-const stopButton = document.getElementById("stop-button");
 const overlayStartButton = document.getElementById("overlay-start-button");
 const langEnButton = document.getElementById("lang-en");
 const langRuButton = document.getElementById("lang-ru");
@@ -76,6 +78,9 @@ const uiText = {
   resultScoreLabel: document.getElementById("result-score-label"),
   resultDurationLabel: document.getElementById("result-duration-label"),
   resultDifficultyLabel: document.getElementById("result-difficulty-label"),
+  hudTimeLabel: document.getElementById("hud-time-label"),
+  hudScoreLabel: document.getElementById("hud-score-label"),
+  hudExitLabel: document.getElementById("hud-exit-label"),
   leaderboardOpenLabel: document.getElementById("leaderboard-open-label"),
   leaderboardTitle: document.getElementById("leaderboard-title"),
   leaderboardDurationLabel: document.getElementById("leaderboard-duration-label"),
@@ -116,13 +121,14 @@ const translations = {
     diffHard: "Hard",
     difficultyAriaLabel: "Difficulty",
     arenaLabel: "Game field",
-    arenaToolsLabel: "Game controls",
     introEyebrow: "Ready Check",
     introTitle: "Click Warmup Before the Match.",
     introNote:
       "Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2, and League of Legends.",
     startSession: "Start New Game",
-    stop: "Stop",
+    hudTimeLabel: "Time",
+    hudScoreLabel: "Score",
+    hudExitLabel: "Exit",
     resultEyebrow: "Session Complete",
     resultTitle: "Training Results",
     resultScoreLabel: "Score",
@@ -181,13 +187,14 @@ const translations = {
     diffHard: "Тяжёлый",
     difficultyAriaLabel: "Сложность",
     arenaLabel: "Игровое поле",
-    arenaToolsLabel: "Игровые элементы управления",
     introEyebrow: "Готовность",
     introTitle: "Разминка на клики перед игрой.",
     introNote:
       "Подходит для разминки (раскликаться) перед: VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2 и League of Legends.",
     startSession: "Начать новую игру",
-    stop: "Стоп",
+    hudTimeLabel: "Время",
+    hudScoreLabel: "Очки",
+    hudExitLabel: "Выход",
     resultEyebrow: "Сессия завершена",
     resultTitle: "Результат тренировки",
     resultScoreLabel: "Счёт",
@@ -229,6 +236,8 @@ const HIT_REACTION_MS = 220;
 const MISS_MARKER_MS = 100;
 const SESSION_COUNTDOWN_STEPS = [3, 2, 1];
 const SESSION_COUNTDOWN_MS = 1000;
+// The HUD timer turns red for the last 10 seconds (or the last half of a very short round).
+const LOW_TIME_WARNING_MS = 10000;
 const ARMORED_SPAWN_INTERVAL_MS = 6000;
 const ARMORED_HITS_REQUIRED = 5;
 const ARMORED_HOLD_MS = 4000;
@@ -241,9 +250,9 @@ const SFX_MASTER_GAIN = 2.24;
 const SFX_OUTPUT_VOLUME = 0.7;
 
 const DIFFICULTY_PRESETS = {
-  easy:   { spawn: 900,  hold: 1500, concurrent: 1, flyingLifetime: 4000 },
-  medium: { spawn: 500,  hold: 1000, concurrent: 1, flyingLifetime: 2500 },
-  hard:   { spawn: 300,  hold: 800,  concurrent: 1, flyingLifetime: 1200 },
+  easy:   { spawn: 900,  hold: 1500, concurrent: 1, flyingLifetime: 6000 },
+  medium: { spawn: 500,  hold: 1000, concurrent: 1, flyingLifetime: 3750 },
+  hard:   { spawn: 300,  hold: 800,  concurrent: 1, flyingLifetime: 1800 },
 };
 
 const state = {
@@ -372,12 +381,10 @@ function applyLanguage() {
   durationPresets.setAttribute("aria-label", copy.presetsAriaLabel);
   difficultyBtns.setAttribute("aria-label", copy.difficultyAriaLabel);
   arena.setAttribute("aria-label", copy.arenaLabel);
-  arenaTools.setAttribute("aria-label", copy.arenaToolsLabel);
   document.querySelector(".lang-switch")?.setAttribute("aria-label", copy.langSwitcherLabel);
 
   overlayStartButton.textContent = copy.startSession;
   restartButton.textContent = copy.startSession;
-  stopButton.textContent = copy.stop;
 
   document.getElementById("diff-easy").textContent = copy.diffEasy;
   document.getElementById("diff-medium").textContent = copy.diffMedium;
@@ -420,8 +427,37 @@ function updatePresetButtons(selectedSeconds) {
   });
 }
 
-function updateControls() {
-  stopButton.disabled = !state.running && !state.preparing;
+function updateHudVisibility() {
+  arenaHud.classList.toggle("hidden", !state.running && !state.preparing);
+}
+
+function renderHudTime() {
+  const text = formatTime(state.remainingMs);
+  if (hudTime.textContent !== text) {
+    hudTime.textContent = text;
+  }
+  const warningMs = Math.min(LOW_TIME_WARNING_MS, state.totalSeconds * 500);
+  hudTimeStat.classList.toggle("is-low", state.running && state.remainingMs <= warningMs);
+}
+
+function renderHudScore() {
+  const score = getScore();
+  // A real minus sign (U+2212) lines up with the digits better than a hyphen.
+  const text = score < 0 ? "−" + Math.abs(score) : String(score);
+  if (hudScore.textContent === text) {
+    return;
+  }
+
+  hudScore.textContent = text;
+  hudScore.classList.toggle("is-positive", score > 0);
+  hudScore.classList.toggle("is-negative", score < 0);
+
+  if (state.running) {
+    // Restart the short "pop" so every change of the score is noticeable.
+    hudScore.classList.remove("is-bump");
+    void hudScore.offsetWidth;
+    hudScore.classList.add("is-bump");
+  }
 }
 
 
@@ -819,6 +855,21 @@ function removeTarget(targetId, reason = "cleanup") {
   }
   state.activeTargets.delete(targetId);
 
+  if (reason === "timeout" && state.running) {
+    if (record.hitsLeft !== undefined) {
+      state.missedArmored += 1;
+    } else if (record.isFlying) {
+      state.missedFlying += 1;
+    } else {
+      state.missedTargets += 1;
+    }
+  }
+
+  // Hit counters are bumped by the click handlers before they call removeTarget.
+  if (reason !== "cleanup") {
+    renderHudScore();
+  }
+
   if (reason === "armored-kill") {
     record.element.classList.remove("is-arriving", "is-holding", "is-departing");
     record.element.classList.add("is-hit");
@@ -854,17 +905,6 @@ function removeTarget(targetId, reason = "cleanup") {
     }, HIT_REACTION_MS);
 
     return;
-  }
-
-  if (reason === "timeout" && state.running) {
-    if (record.hitsLeft !== undefined) {
-      state.missedArmored += 1;
-    } else if (record.isFlying) {
-      state.missedFlying += 1;
-    } else {
-      state.missedTargets += 1;
-    }
-
   }
 
   record.element.remove();
@@ -1206,13 +1246,13 @@ function spawnTick() {
 }
 
 function renderTimeLeft() {
-  if (!state.running) {
-    return;
+  if (state.running) {
+    state.remainingMs = Math.max(0, state.startTime + state.totalSeconds * 1000 - Date.now());
   }
 
-  state.remainingMs = Math.max(0, state.startTime + state.totalSeconds * 1000 - Date.now());
+  renderHudTime();
 
-  if (state.remainingMs <= 0) {
+  if (state.running && state.remainingMs <= 0) {
     finishSession();
   }
 }
@@ -1251,7 +1291,8 @@ function resetStats() {
   state.elapsedMs = 0;
   state.remainingMs = state.totalSeconds * 1000;
   renderTimeLeft();
-  updateControls();
+  renderHudScore();
+  updateHudVisibility();
 }
 
 async function exitArenaFullscreen() {
@@ -1284,8 +1325,9 @@ async function finishSession() {
     arena.classList.remove("is-running");
     introOverlay.classList.remove("hidden");
     resultOverlay.classList.add("hidden");
-    updateControls();
+    updateHudVisibility();
     syncPreviewTime();
+    exitArenaFullscreen();
     return;
   }
 
@@ -1327,14 +1369,16 @@ async function finishSession() {
   setScoreStatus(completed ? "" : "completeRound");
 
   renderTimeLeft();
-  updateControls();
+  updateHudVisibility();
 
-  const timeupOverlay = document.getElementById("timeup-overlay");
-  const timeupValue = document.getElementById("timeup-value");
-  timeupValue.textContent = state.language === "ru" ? "ВРЕМЯ ВЫШЛО" : "TIME UP";
-  timeupOverlay.classList.remove("hidden");
-  await new Promise((resolve) => window.setTimeout(resolve, 1000));
-  timeupOverlay.classList.add("hidden");
+  if (completed) {
+    const timeupOverlay = document.getElementById("timeup-overlay");
+    const timeupValue = document.getElementById("timeup-value");
+    timeupValue.textContent = state.language === "ru" ? "ВРЕМЯ ВЫШЛО" : "TIME UP";
+    timeupOverlay.classList.remove("hidden");
+    await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    timeupOverlay.classList.add("hidden");
+  }
 
   await exitArenaFullscreen();
 
@@ -1443,13 +1487,16 @@ function openLeaderboard(fromResult = false) {
   loadLeaderboard();
 }
 
-function beginSession() {
+function applySessionSettings() {
   const settings = collectSettings();
 
   state.totalSeconds = settings.duration;
   state.spawnInterval = settings.spawn;
   state.holdDuration = settings.hold;
   state.maxTargets = settings.concurrent;
+}
+
+function beginSession() {
   state.startTime = Date.now();
   state.running = true;
   state.preparing = false;
@@ -1466,7 +1513,7 @@ function beginSession() {
   hideCountdownOverlay();
   arena.classList.add("is-running");
   arena.focus();
-  updateControls();
+  updateHudVisibility();
 
   spawnTick();
 
@@ -1535,6 +1582,7 @@ async function startSession() {
   state.lastCompletedResult = null;
   setScoreStatus("");
   prewarmAudio();
+  applySessionSettings();
 
   state.preparing = true;
   resultOverlay.classList.add("hidden");
@@ -1543,9 +1591,13 @@ async function startSession() {
   clearSpawnLoop();
   clearCountdownLoop();
   hideCountdownOverlay();
-  updateControls();
+  resetStats();
 
   await enterArenaFullscreen();
+  if (!state.preparing) {
+    // The player pressed Esc while the browser was switching to fullscreen.
+    return;
+  }
 
   bgTracks.forEach(t => { t.pause(); t.currentTime = 0; });
   bgMusic = bgTracks[Math.random() < 0.65 ? 0 : 1];
@@ -1620,6 +1672,11 @@ langRuButton.addEventListener("click", () => {
   setLanguage("ru");
 });
 
+// Drop the pop class once it has played, so it does not replay when the HUD is shown again.
+hudScore.addEventListener("animationend", () => {
+  hudScore.classList.remove("is-bump");
+});
+
 function setMute(muted) {
   state.muted = muted;
   bgTracks.forEach(t => { t.muted = muted; });
@@ -1644,7 +1701,15 @@ difficultyButtons.forEach((button) => {
 });
 
 
-stopButton.addEventListener("click", () => {
+// Esc ends the round. In fullscreen the browser uses Esc to leave fullscreen and
+// usually does not pass the key to the page, so the fullscreenchange handler below
+// covers that case; this listener covers play without fullscreen.
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || (!state.running && !state.preparing) || leaderboardDialog.open) {
+    return;
+  }
+
+  event.preventDefault();
   finishSession();
 });
 
@@ -1693,10 +1758,14 @@ window.addEventListener("resize", () => {
 });
 
 document.addEventListener("fullscreenchange", () => {
-  updateControls();
-
   if (document.fullscreenElement === arenaSection) {
     arena.focus();
+    return;
+  }
+
+  // Leaving fullscreen mid-round (Esc, browser UI, Android back gesture) ends the round.
+  if (!document.fullscreenElement && (state.running || state.preparing)) {
+    finishSession();
   }
 });
 
