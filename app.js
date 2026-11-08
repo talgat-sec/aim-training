@@ -442,11 +442,22 @@ function renderHudTime() {
 
 function renderHudScore() {
   const score = getScore();
-  const text = String(score);
-  if (hudScore.textContent !== text) {
-    hudScore.textContent = text;
+  // A real minus sign (U+2212) lines up with the digits better than a hyphen.
+  const text = score < 0 ? "−" + Math.abs(score) : String(score);
+  if (hudScore.textContent === text) {
+    return;
   }
+
+  hudScore.textContent = text;
+  hudScore.classList.toggle("is-positive", score > 0);
   hudScore.classList.toggle("is-negative", score < 0);
+
+  if (state.running) {
+    // Restart the short "pop" so every change of the score is noticeable.
+    hudScore.classList.remove("is-bump");
+    void hudScore.offsetWidth;
+    hudScore.classList.add("is-bump");
+  }
 }
 
 
@@ -1659,6 +1670,11 @@ langEnButton.addEventListener("click", () => {
 
 langRuButton.addEventListener("click", () => {
   setLanguage("ru");
+});
+
+// Drop the pop class once it has played, so it does not replay when the HUD is shown again.
+hudScore.addEventListener("animationend", () => {
+  hudScore.classList.remove("is-bump");
 });
 
 function setMute(muted) {
