@@ -8,7 +8,7 @@ A free browser-based aim and reaction trainer for a quick warm-up before games s
 
 - Click moving targets to practice accuracy and reaction speed.
 - See the time left and your score live in the corner of the arena while you play.
-- The arena is a fixed 1920×1080 field scaled to your screen, so browser zoom or monitor size does not make targets easier to hit.
+- The arena is a fixed 16:9 field (always 7×4 grid cells) scaled to your screen, so browser zoom, Windows display scaling or monitor size does not make targets easier to hit.
 - Choose Easy, Medium, or Hard difficulty.
 - Set a custom session length or use a preset from 30 seconds to 5 minutes (1.5 minutes by default).
 - Switch between English and Russian; toggle sound on or off.

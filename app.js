@@ -234,11 +234,13 @@ const translations = {
 
 const GROW_DURATION_MS = 1350;
 const SHRINK_DURATION_MS = 1350;
-// The game is played on a fixed 1920x1080 logical field (the most common monitor size),
-// scaled to fit the arena. Browser zoom and window size only change that scale, so
-// targets always cover the same share of the screen and zooming in gives no advantage.
-const STAGE_WIDTH = 1920;
-const STAGE_HEIGHT = 1080;
+// The game is played on a fixed 1280x720 logical field (16:9, exactly 7x4 background grid
+// cells), scaled to fit the arena. Target sizes are in field pixels, so they always cover
+// the same share of the screen: browser zoom, Windows display scaling and monitor size only
+// change the scale, and zooming in gives no advantage. 1280x720 keeps targets as large,
+// relative to the screen, as players were used to on the live site.
+const STAGE_WIDTH = 1280;
+const STAGE_HEIGHT = 720;
 const HIT_REACTION_MS = 220;
 const MISS_MARKER_MS = 100;
 const SESSION_COUNTDOWN_STEPS = [3, 2, 1];
