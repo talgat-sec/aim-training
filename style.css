@@ -363,6 +363,26 @@ input {
   flex-direction: column;
 }
 
+/* During a round the arena fills the whole browser window even if real fullscreen was
+   refused, so the field is never squeezed next to the settings panel. */
+.arena-section.is-playing {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #020f19;
+}
+
+.arena-section.is-playing .arena-frame {
+  flex: 1;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.arena-section.is-playing .arena {
+  height: 100%;
+}
+
 .arena-frame {
   position: relative;
   flex: 1;
@@ -377,10 +397,13 @@ input {
 .arena-grid {
   position: absolute;
   inset: 0;
+  /* Line width and cell size follow the field scale (--grid-line, --stage-scale from app.js) */
   background:
-    linear-gradient(rgba(139, 184, 206, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 184, 206, 0.08) 1px, transparent 1px);
-  background-size: 182px 182px;
+    linear-gradient(rgba(139, 184, 206, 0.08) var(--grid-line, 1px), transparent var(--grid-line, 1px)),
+    linear-gradient(90deg, rgba(139, 184, 206, 0.08) var(--grid-line, 1px), transparent var(--grid-line, 1px));
+  /* Exactly 7 x 4 cells across the 1280x720 field */
+  background-size: calc(1280px / 7 * var(--stage-scale, 1)) calc(720px / 4 * var(--stage-scale, 1));
+  background-position: var(--stage-x, 0px) var(--stage-y, 0px);
 }
 
 .arena {
@@ -389,6 +412,23 @@ input {
   min-height: 0;
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%235dff5d' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M16 2v9'/%3E%3Cpath d='M16 21v9'/%3E%3Cpath d='M2 16h9'/%3E%3Cpath d='M21 16h9'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%235dff5d'/%3E%3C/svg%3E") 16 16, crosshair;
   isolation: isolate;
+  overflow: hidden;
+}
+
+/* Fixed 1280x720 logical field. JS scales it to fit the arena (see fitStage in app.js),
+   so sizes inside it are in field pixels and do not depend on browser zoom. */
+.arena-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1280px;
+  height: 720px;
+  transform-origin: 0 0;
+}
+
+/* On screens that are not 16:9 the spare strips are dimmed: targets never appear there. */
+.arena.is-running .arena-stage {
+  box-shadow: 0 0 0 9999px rgba(1, 9, 14, 0.28);
 }
 
 /* ── In-game HUD ─────────────────────────────────────────────
@@ -400,7 +440,7 @@ input {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 20px 24px;
+  padding: 22px 28px;
   pointer-events: none;
   user-select: none;
 }
@@ -412,7 +452,7 @@ input {
 .arena-hud__stats {
   display: flex;
   align-items: flex-start;
-  gap: 30px;
+  gap: 26px;
 }
 
 .arena-hud__stat {
@@ -424,7 +464,7 @@ input {
 
 .arena-hud__label {
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
@@ -432,7 +472,7 @@ input {
 .arena-hud__value {
   color: var(--text);
   font-family: "Consolas", "Lucida Console", monospace;
-  font-size: clamp(1.45rem, 2.3vw, 2.1rem);
+  font-size: 30px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -443,14 +483,14 @@ input {
 /* Score looks different from the clock-style timer on purpose:
    divider + extra space, bold slanted sans-serif, green/red tint, pop on change. */
 .arena-hud__stat--score {
-  padding-left: 30px;
+  padding-left: 26px;
   border-left: 1px solid rgba(238, 246, 251, 0.14);
   opacity: 0.72;
 }
 
 .arena-hud__value--score {
   font-family: "Bahnschrift", "Trebuchet MS", "Segoe UI", sans-serif;
-  font-size: clamp(1.7rem, 2.7vw, 2.45rem);
+  font-size: 35px;
   font-weight: 800;
   letter-spacing: 0.01em;
   transform: skewX(-8deg);
@@ -504,7 +544,7 @@ input {
   border-radius: 999px;
   background: rgba(2, 18, 28, 0.22);
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   opacity: 0.6;
@@ -517,7 +557,7 @@ input {
   border-radius: 6px;
   color: var(--text);
   font-family: inherit;
-  font-size: 0.66rem;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -538,6 +578,8 @@ input {
 
 .overlay-card--intro {
   width: min(620px, calc(100% - 40px));
+  max-height: calc(100% - 20px);
+  overflow-y: auto;
 }
 
 .countdown-overlay {
@@ -553,12 +595,13 @@ input {
 .countdown-overlay span {
   color: #fff5ec;
   font-family: "Consolas", "Lucida Console", monospace;
-  font-size: clamp(5rem, 16vw, 10rem);
+  /* Scaled with the field (--stage-scale from app.js) so browser zoom does not blow it up */
+  font-size: calc(150px * var(--stage-scale, 1));
   font-weight: 700;
   line-height: 1;
   text-shadow:
-    0 0 24px rgba(255, 98, 48, 0.55),
-    0 0 48px rgba(255, 98, 48, 0.28);
+    0 0 calc(24px * var(--stage-scale, 1)) rgba(255, 98, 48, 0.55),
+    0 0 calc(48px * var(--stage-scale, 1)) rgba(255, 98, 48, 0.28);
 }
 
 .timeup-overlay {
@@ -584,14 +627,14 @@ input {
 .timeup-overlay span {
   color: #fff5ec;
   font-family: "Consolas", "Lucida Console", monospace;
-  font-size: clamp(3rem, 10vw, 7rem);
+  font-size: calc(105px * var(--stage-scale, 1));
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-shadow:
-    0 0 24px rgba(255, 98, 48, 0.7),
-    0 0 60px rgba(255, 98, 48, 0.35);
+    0 0 calc(24px * var(--stage-scale, 1)) rgba(255, 98, 48, 0.7),
+    0 0 calc(60px * var(--stage-scale, 1)) rgba(255, 98, 48, 0.35);
 }
 
 .overlay-card__note {
@@ -890,9 +933,7 @@ input {
   min-height: 0;
 }
 
-.arena-section:fullscreen .arena-hud {
-  padding: 26px 32px;
-}
+
 
 @media (max-width: 780px) {
   body {
@@ -973,16 +1014,14 @@ input {
 
   .arena {
     height: auto;
-    min-height: 58vh;
-  }
-
-  .arena-hud {
-    padding: 14px 16px;
+    /* Tall enough for the start and result cards even at a big browser zoom */
+    min-height: max(58vh, 340px);
   }
 }
 
-/* No Esc key on phones and tablets */
-@media (max-width: 780px), (hover: none) and (pointer: coarse) {
+/* No Esc key on touch-only devices (phones, tablets). Hidden by input type, not by width,
+   so a zoomed-in desktop page still shows the hint. */
+@media (hover: none) and (pointer: coarse) {
   .arena-hud__exit {
     display: none;
   }
