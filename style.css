@@ -642,6 +642,12 @@ input {
   color: var(--accent-soft);
 }
 
+.overlay-card .overlay-card__controls {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .overlay-actions {
   display: flex;
   flex-wrap: wrap;

@@ -19,7 +19,7 @@ A free browser-based aim and reaction trainer for a quick warm-up before games s
 
 1. Open the [live game](https://aim-training-online.netlify.app/).
 2. Choose a session length and difficulty.
-3. Select **Start New Game** and click the targets as they appear.
+3. Select **Start New Game** and click the targets as they appear. Both the left and the right mouse button shoot, so you can warm up either click.
 4. Review your results when the session ends, or press **Esc** to end it early.
 5. After a full round, enter a nickname and press Enter or select **Save Score**. The top 10 for that duration and difficulty appears right in the results card, with your row highlighted. Open **Leaderboard** to browse other modes.
 

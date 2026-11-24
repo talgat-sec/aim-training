@@ -75,6 +75,7 @@ const uiText = {
   introEyebrow: document.getElementById("intro-eyebrow"),
   introTitle: document.getElementById("intro-title"),
   introNote: document.getElementById("intro-note"),
+  introControls: document.getElementById("intro-controls"),
   resultEyebrow: document.getElementById("result-eyebrow"),
   resultTitle: document.getElementById("result-title"),
   resultScoreLabel: document.getElementById("result-score-label"),
@@ -127,6 +128,7 @@ const translations = {
     introTitle: "Click Warmup Before the Match.",
     introNote:
       "Great for warming up before VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2, and League of Legends.",
+    introControls: "Shoot with the left or right mouse button · Esc ends the round",
     startSession: "Start New Game",
     hudTimeLabel: "Time",
     hudScoreLabel: "Score",
@@ -193,6 +195,7 @@ const translations = {
     introTitle: "Разминка на клики перед игрой.",
     introNote:
       "Подходит для разминки (раскликаться) перед: VALORANT, Counter-Strike 2, Apex Legends, Call of Duty, Fortnite, Dota 2 и League of Legends.",
+    introControls: "Стреляйте левой или правой кнопкой мыши · Esc — выход из раунда",
     startSession: "Начать новую игру",
     hudTimeLabel: "Время",
     hudScoreLabel: "Очки",
@@ -995,22 +998,6 @@ function createTarget() {
   target.style.setProperty("--shrink-duration", `${shrinkDuration}ms`);
   target.setAttribute("aria-label", "Target");
 
-  target.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) {
-      return;
-    }
-
-    event.stopPropagation();
-
-    if (!state.running) {
-      return;
-    }
-
-    state.hits += 1;
-
-    removeTarget(targetId, "hit");
-  });
-
   arenaStage.appendChild(target);
 
   const timerIds = [
@@ -1046,6 +1033,10 @@ function createTarget() {
     element: target,
     timerIds,
     position,
+    onShot() {
+      state.hits += 1;
+      removeTarget(targetId, "hit");
+    },
   });
 }
 
@@ -1075,38 +1066,6 @@ function createArmoredTarget() {
   target.style.setProperty("--target-font-size", `${Math.floor(size * 0.3)}px`);
   target.setAttribute("aria-label", "Armored Target");
 
-  target.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) {
-      return;
-    }
-
-    event.stopPropagation();
-
-    if (!state.running) {
-      return;
-    }
-
-    const record = state.activeTargets.get(targetId);
-    if (!record) {
-      return;
-    }
-
-    record.hitsLeft -= 1;
-    target.dataset.hitsLeft = String(record.hitsLeft);
-
-    if (record.hitsLeft <= 0) {
-      state.armoredKills += 1;
-  
-      removeTarget(targetId, "armored-kill");
-    } else {
-      target.classList.remove("is-armored-hit");
-      // Force reflow to restart animation
-      void target.offsetWidth;
-      target.classList.add("is-armored-hit");
-      playArmoredHitSound();
-    }
-  });
-
   arenaStage.appendChild(target);
 
   const timerIds = [
@@ -1129,12 +1088,29 @@ function createArmoredTarget() {
     }, totalLife),
   ];
 
-  state.activeTargets.set(targetId, {
+  const record = {
     element: target,
     timerIds,
     position,
     hitsLeft: ARMORED_HITS_REQUIRED,
-  });
+    onShot() {
+      record.hitsLeft -= 1;
+      target.dataset.hitsLeft = String(record.hitsLeft);
+
+      if (record.hitsLeft <= 0) {
+        state.armoredKills += 1;
+        removeTarget(targetId, "armored-kill");
+      } else {
+        target.classList.remove("is-armored-hit");
+        // Force reflow to restart animation
+        void target.offsetWidth;
+        target.classList.add("is-armored-hit");
+        playArmoredHitSound();
+      }
+    },
+  };
+
+  state.activeTargets.set(targetId, record);
 }
 
 function createFlyingTarget() {
@@ -1163,22 +1139,6 @@ function createFlyingTarget() {
   target.style.transform = `translate(-50%, -50%) rotate(${initialAngle * (180 / Math.PI) + 90}deg)`;
   target.setAttribute("aria-label", "Flying Target");
 
-  target.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) {
-      return;
-    }
-
-    event.stopPropagation();
-
-    if (!state.running) {
-      return;
-    }
-
-    state.flyingKills += 1;
-
-    removeTarget(targetId, "flying-kill");
-  });
-
   arenaStage.appendChild(target);
 
   const record = {
@@ -1190,6 +1150,10 @@ function createFlyingTarget() {
     y: startY,
     angle: initialAngle,
     rafId: null,
+    onShot() {
+      state.flyingKills += 1;
+      removeTarget(targetId, "flying-kill");
+    },
   };
 
   state.activeTargets.set(targetId, record);
@@ -1749,25 +1713,50 @@ document.addEventListener("keydown", (event) => {
   finishSession();
 });
 
-arena.addEventListener(
-  "pointerdown",
-  (event) => {
-    if (!state.running || event.button !== 0) {
-      return;
-    }
+// Left and right mouse buttons both shoot; every press is its own shot.
+// A mouse fires pointerdown only for the first button pressed. Pressing the other button
+// while one is held (a chord) arrives as pointermove whose `button` names the button that
+// changed, so both events are handled here.
+const SHOT_BUTTON_BITS = { 0: 1, 2: 2 }; // MouseEvent.button -> its MouseEvent.buttons bit
 
-    playShotSound();
-  },
-  true,
-);
+function isShotPress(event) {
+  const bit = SHOT_BUTTON_BITS[event.button];
+  if (!bit) {
+    return false;
+  }
+  if (event.type === "pointerdown") {
+    return true;
+  }
+  // On pointermove only a newly pressed button counts, not a release or a plain move.
+  return event.type === "pointermove" && (event.buttons & bit) !== 0;
+}
 
-arena.addEventListener("pointerdown", (event) => {
-  if (!state.running || event.button !== 0 || (event.target !== arena && event.target !== arenaStage)) {
+function handleShot(event) {
+  if (!state.running || !isShotPress(event)) {
+    return;
+  }
+
+  playShotSound();
+
+  const targetElement = event.target instanceof Element ? event.target.closest(".target") : null;
+  const record = targetElement ? state.activeTargets.get(Number(targetElement.dataset.targetId)) : null;
+  if (record && record.onShot) {
+    record.onShot();
     return;
   }
 
   state.clicks += 1;
   createMissMarker(event.clientX, event.clientY);
+}
+
+arena.addEventListener("pointerdown", handleShot);
+arena.addEventListener("pointermove", handleShot);
+
+// The right button shoots during a round, so the browser's context menu must not pop up.
+arenaSection.addEventListener("contextmenu", (event) => {
+  if (arenaSection.classList.contains("is-playing")) {
+    event.preventDefault();
+  }
 });
 
 presetButtons.forEach((button) => {
